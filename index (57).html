@@ -1,0 +1,1858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Sealed Real Estate Performance Dashboard</title>
+<style>
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#f0f3f8;color:#132744;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+.hdr{background:#132744;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo-row{display:flex;align-items:center;gap:12px;}
+.logo-img{width:40px;height:40px;border-radius:8px;object-fit:cover;}
+.brand{font-size:17px;font-weight:800;color:#fff;letter-spacing:-.2px;}
+.brand-s{font-size:12px;color:#8eb8d8;font-weight:500;letter-spacing:.1px;}
+.hdr-r{display:flex;align-items:center;gap:12px;}
+.sync-lbl{font-size:12px;color:#8eb8d8;}
+.btn{background:#fff;color:#132744;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;}
+.btn:hover{background:#e8f0fb;}
+.btn.busy{opacity:.6;pointer-events:none;}
+@keyframes rot{to{transform:rotate(360deg);}}
+.sp{display:inline-block;animation:rot .75s linear infinite;}
+.tab-bar{background:#1a3360;padding:0 28px;display:flex;align-items:center;}
+.tab{padding:13px 22px;font-size:13px;font-weight:700;color:#8eb8d8;cursor:pointer;border-bottom:3px solid transparent;transition:color .15s;white-space:nowrap;letter-spacing:.2px;}
+.tab.on{color:#fff;border-bottom-color:#fff;}
+.tab:hover:not(.on){color:#d0e4f5;}
+.page{padding:20px 28px;}
+.status-bar{border-radius:8px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600;}
+.ok{background:#e8f5ef;border:1px solid #a8d8bc;color:#1a6644;}
+.info{background:#e8f0fb;border:1px solid #c8d8f0;color:#132744;}
+.err{background:#fdecea;border:1px solid #f5c6c6;color:#8b1a1a;}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ok .status-dot{background:#1a6644;} .info .status-dot{background:#1d6fd4;} .err .status-dot{background:#c0392b;}
+.cur-strip{background:#132744;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:0;}
+.cur-kpis{display:grid;flex:1;}
+.cur-kpi{padding:10px 16px;border-right:1px solid #1e3d70;}
+.cur-kpi:last-child{border-right:none;}
+.cur-kpi-lbl{font-size:10px;font-weight:700;color:#7ab0d4;letter-spacing:.6px;text-transform:uppercase;margin-bottom:4px;}
+.cur-kpi-val{font-size:26px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1;margin-bottom:4px;}
+.cur-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:800;}
+.cb-ok{background:#166534;color:#4ade80;}.cb-warn{background:#7c4f00;color:#fbbf24;}.cb-bad{background:#7f1d1d;color:#f87171;}.cb-none{background:#1e3d70;color:#8eb8d8;}
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0 14px;}
+.div-line{flex:1;height:1px;background:#c1dae5;}
+.div-lbl{font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:#132744;background:#c1dae5;padding:4px 14px;border-radius:20px;white-space:nowrap;}
+.krow4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.krow3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.krow2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.kcard{background:#fff;border-radius:12px;padding:20px 18px;position:relative;box-shadow:0 2px 8px rgba(19,39,68,.09);border:1px solid #dde6f2;}
+.kcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0;background:#132744;}
+.klbl{font-size:11px;font-weight:700;color:#4a6a8a;letter-spacing:.6px;text-transform:uppercase;margin-bottom:7px;}
+.kval{font-size:30px;font-weight:900;letter-spacing:-1px;line-height:1;color:#132744;margin-bottom:4px;}
+.kperiod{font-size:12px;color:#7a9abd;font-weight:500;margin-bottom:9px;}
+.sbadge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;margin-bottom:6px;}
+.sb-ok{background:#e8f5ef;color:#1a6644;}.sb-warn{background:#fef6e4;color:#7a4f00;}.sb-bad{background:#fdecea;color:#8b1a1a;}.sb-none{background:#f0f4f9;color:#5a7a9a;}
+.sb-dot{width:6px;height:6px;border-radius:50%;}
+.sb-ok .sb-dot{background:#1a6644;}.sb-warn .sb-dot{background:#c8820a;}.sb-bad .sb-dot{background:#c0392b;}.sb-none .sb-dot{background:#8aa8c4;}
+.rate-pct{font-size:13px;font-weight:700;color:#132744;margin-bottom:5px;}
+.reco-gap{font-size:12px;font-weight:600;color:#132744;margin-bottom:7px;}
+.gap-val{color:#b83025;font-weight:800;}.gap-met{color:#1a6644;font-weight:800;}
+.reco-stretch{font-size:11px;color:#4a6a8a;margin-bottom:7px;}
+.pbar-wrap{margin-top:6px;}
+.pbar-row{display:flex;justify-content:space-between;margin-bottom:3px;}
+.pbar-lbl{font-size:11px;font-weight:700;color:#5a7a9a;}
+.pbar-track{position:relative;height:8px;background:#e8eef5;border-radius:6px;}
+.pbar-fill{height:8px;border-radius:6px;position:absolute;top:0;left:0;transition:width .6s ease;}
+.pf-ok{background:#1a7a52;}.pf-warn{background:#c8820a;}.pf-bad{background:#b83025;}
+.pbar-tgt{position:absolute;top:-4px;width:2px;height:16px;background:#132744;border-radius:1px;z-index:3;}
+.pbar-str{position:absolute;top:-4px;width:2px;height:16px;background:#5a7a9a;border-radius:1px;opacity:.4;z-index:2;}
+.ratio-card{background:#fff;border-radius:12px;padding:18px 16px;box-shadow:0 1px 4px rgba(19,39,68,.07);border:1px solid #e8eef5;position:relative;}
+.ratio-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0;background:#132744;}
+.ratio-big{font-size:34px;font-weight:900;color:#132744;letter-spacing:-1.5px;line-height:1;margin-bottom:2px;}
+.ratio-sub{font-size:13px;color:#5a7a9a;margin-bottom:8px;}
+.yr-card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(19,39,68,.07);border:1px solid #e8eef5;position:relative;}
+.yr-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0;background:#132744;}
+.yr-row{display:flex;align-items:flex-end;gap:8px;margin:6px 0 8px;}
+.yr-blk{flex:1;}.yr-yr-lbl{font-size:11px;font-weight:700;text-transform:uppercase;color:#5a7a9a;margin-bottom:2px;}
+.yr-n-old{font-size:18px;font-weight:800;color:#8aa8c4;}.yr-n-new{font-size:22px;font-weight:900;color:#132744;}
+.yr-arrow{font-size:16px;color:#c8d8e8;margin-bottom:4px;flex-shrink:0;}
+.yr-chg{font-size:14px;font-weight:800;margin-bottom:4px;}
+.yr-bar-bg{height:5px;background:#e8eef5;border-radius:3px;overflow:hidden;}
+.yr-bar-fill{height:100%;border-radius:3px;background:#132744;}
+.chart-tile{background:#fff;border-radius:12px;padding:18px 22px;box-shadow:0 1px 4px rgba(19,39,68,.07);border:1px solid #e8eef5;margin-bottom:12px;}
+.ctop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.ctitle-nm{font-size:14px;font-weight:800;color:#132744;}.ctitle-tot{font-size:16px;font-weight:900;color:#132744;}.ctitle-sub{font-size:11px;color:#5a7a9a;}
+.chart-wrap{display:flex;align-items:flex-end;gap:4px;padding-bottom:32px;padding-top:30px;position:relative;}
+.mc{display:flex;flex-direction:column;align-items:center;position:relative;}
+.mbar-col{display:flex;align-items:flex-end;}.mbar{border-radius:4px 4px 0 0;position:relative;}
+.mbar-lbl{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;color:#132744;white-space:nowrap;}
+.mlbl{font-size:11px;font-weight:700;color:#4a6a8a;position:absolute;bottom:0;left:50%;transform:translateX(-50%);white-space:nowrap;}
+.split-grid{display:grid;grid-template-columns:1fr 12px 1fr;}
+.split-hdr{font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;}
+.split-div{display:flex;align-items:stretch;justify-content:center;}.split-div-line{width:2px;background:#e8eef5;border-radius:2px;}
+.ov{position:fixed;inset:0;background:rgba(255,255,255,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:12px;}
+.ov.h{display:none;}
+.sp2{width:36px;height:36px;border:3px solid #e8eef5;border-top-color:#132744;border-radius:50%;animation:rot .7s linear infinite;}
+.ovt{font-size:14px;color:#5a7a9a;font-weight:600;}
+.ftr{padding:12px 28px;border-top:1px solid #dde6f0;display:flex;justify-content:space-between;background:#fff;}
+.ftr span{font-size:12px;color:#5a7a9a;}
+/* REPORT MODAL */
+.rpt-modal-bg{position:fixed;inset:0;background:rgba(10,20,40,.72);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.rpt-modal-bg.h{display:none;}
+.rpt-modal{background:#fff;border-radius:16px;width:100%;max-width:760px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.35);}
+.rpt-modal-hdr{background:#132744;padding:18px 24px;border-radius:16px 16px 0 0;display:flex;align-items:center;justify-content:space-between;}
+.rpt-modal-title{color:#fff;font-size:15px;font-weight:800;}
+.rpt-modal-sub{color:#8eb8d8;font-size:12px;margin-top:2px;}
+.rpt-close{background:none;border:none;color:#8eb8d8;font-size:22px;cursor:pointer;line-height:1;padding:0 4px;}
+.rpt-close:hover{color:#fff;}
+.rpt-modal-body{flex:1;overflow-y:auto;padding:0;}
+.rpt-preview{padding:20px 20px 0;}
+.rpt-email-shell{border:1px solid #dde6f0;border-radius:10px;overflow:hidden;margin-bottom:20px;box-shadow:0 4px 16px rgba(0,0,0,.08);}
+.rpt-email-meta{background:#f5f7fa;padding:12px 16px;border-bottom:1px solid #dde6f0;font-size:12px;color:#5a7a9a;line-height:1.8;}
+.rpt-email-meta b{color:#132744;}
+.rpt-email-body{background:#fff;}
+.rpt-modal-foot{padding:16px 24px;border-top:1px solid #e8eef5;display:flex;gap:10px;justify-content:flex-end;background:#f9fafc;border-radius:0 0 16px 16px;}
+.rpt-btn-cancel{background:#e8eef5;color:#132744;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;}
+.rpt-btn-send{background:#132744;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;}
+.rpt-btn-send:hover{background:#1a3360;}
+.rpt-btn-copy{background:#e8f0fb;color:#132744;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;}
+.rpt-btn-copy:hover{background:#c8d8f0;}
+.rpt-btn-preview{background:#f0f4f9;color:#132744;border:1px solid #c8d8e8;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;}
+.rpt-btn-preview:hover{background:#e0eaf5;}
+@media(max-width:900px){.krow4,.krow3,.krow2,.split-grid{grid-template-columns:repeat(2,1fr);}.page,.hdr,.tab-bar{padding-left:14px;padding-right:14px;}}
+
+
+/* WEEKLY BREAKDOWN */
+.weekly-section{margin-bottom:4px;}
+.weekly-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(19,39,68,.07);border:1px solid #e8eef5;}
+.weekly-table th{background:#132744;color:#fff;font-size:11px;font-weight:700;padding:10px 12px;text-align:center;white-space:nowrap;letter-spacing:.3px;}
+.weekly-table th.kpi-col{text-align:left;width:130px;}
+.weekly-table td{font-size:12px;padding:10px 14px;text-align:center;border-bottom:1px solid #f0f4f9;vertical-align:top;}
+.weekly-table td.kpi-label{text-align:left;font-size:11px;font-weight:700;color:#4a6a8a;text-transform:uppercase;letter-spacing:.5px;}
+.weekly-table tr:last-child td{border-bottom:none;}
+.w-past-ok{color:#1a6644;font-weight:800;}
+.w-past-bad{color:#b83025;font-weight:800;}
+.w-cur-val{font-size:13px;font-weight:900;color:#132744;display:block;}
+.w-cur-need{font-size:10px;color:#b83025;font-weight:700;margin-top:2px;display:block;}
+.w-cur-ok{font-size:10px;color:#1a6644;font-weight:700;margin-top:2px;display:block;}
+.w-future{color:#8aa8c4;font-size:11px;font-weight:600;}
+.w-cur-cell{background:#f0f6ff;}
+.w-tgt{font-size:9px;color:#8aa8c4;font-weight:600;margin-top:1px;display:block;}
+/* QUARTERLY TARGETS TABLE */
+.qtgt-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(19,39,68,.07);border:1px solid #e8eef5;}
+.qtgt-table th{background:#132744;color:#fff;font-size:11px;font-weight:700;padding:10px 14px;text-align:center;white-space:nowrap;letter-spacing:.3px;}
+.qtgt-table th.kpi-col{text-align:left;width:140px;}
+.qtgt-table td{font-size:12px;padding:10px 14px;text-align:center;border-bottom:1px solid #f0f4f9;vertical-align:top;}
+.qtgt-table td.kpi-label{text-align:left;font-size:11px;font-weight:700;color:#4a6a8a;text-transform:uppercase;letter-spacing:.5px;}
+.qtgt-table tr:last-child td{border-bottom:none;}
+.qtgt-table .q-cur-cell{background:#f0f6ff;}
+.q-actual-ok{color:#1a6644;font-weight:800;font-size:13px;display:block;}
+.q-actual-bad{color:#b83025;font-weight:800;font-size:13px;display:block;}
+.q-actual-cur{color:#132744;font-weight:900;font-size:13px;display:block;}
+.q-future{color:#8aa8c4;font-size:12px;font-weight:600;display:block;}
+.q-sub{font-size:10px;font-weight:600;margin-top:2px;display:block;}
+.q-sub-ok{color:#1a6644;}.q-sub-bad{color:#b83025;}.q-sub-info{color:#5a7a9a;}.q-sub-warn{color:#c8820a;}
+.q-catchup-pill{display:inline-block;margin-top:3px;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:800;background:#fff3cd;color:#7a4f00;border:1px solid #f5d47a;}
+.q-catchup-pill.q-cp-good{background:#e8f5ef;color:#1a6644;border-color:#a8d8bc;}
+.q-tgt-lbl{font-size:9px;color:#8aa8c4;font-weight:600;margin-top:1px;display:block;}
+</style>
+</head>
+<body>
+<div class="ov h" id="ov"><div class="sp2"></div><div class="ovt" id="ovt">Syncing monday.com...</div></div>
+<div class="hdr">
+  <div class="logo-row"><img class="logo-img" src="data:image/jpeg;base64,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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgggggggAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEXTTTTTTWQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASfPPPPPPKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFLPPPPPPPPKAAAAAAAAAAAAAAAAAAAAAAAAAAAADPPPPPNffffbQAAAAAAAAAAAAAAAAAAAAAAAAAAAHvPPPLYgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPvPPPKAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANMMMMMTjzzzygAAAAAAAAAAAAAAAAAAAAAAAAAAAEMsssp7DDDDGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFvPPPPKgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgggktPPPPKAAAAAAAAAAAAAAAAAAAAAAAAAAAAKPfffffPPPOeQAAAAAAAAAAAAAAAAAAAAAAAAAAAPvPPPPPPPPcQAAAAAAAAAAAAAAAAAAAAAAAAAAAAPvPPPPPPPWQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMPfffffbQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMMMMMMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACAAMAAAAQ888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888+zzzzzz888888888888888888888888888888885mPPPPPPX888888888888888888888888888888x18888888888888888888888888888888888888wQ88888888888888888888888888888888888880w8888FxxxxZ8888888888888888888888888888n8888t/wDPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPF/PPPKPvPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPAMMMMN/8A7777bzzzzzzzzzzzzzzzzzzzzzzzzzzzyz//AP8A7jDDDDNPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP/PPPPPvPPPPPPPPPPPPPPPPPPPPPPPPPPPPPvvvv3PPPPMPPPPPPPPPPPPPPPPPPPPPPPPPPPPBPffffXPPPMRfPPPPPPPPPPPPPPPPPPPPPPPPPPPF/PPP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" alt="S">
+    <div><div class="brand">Sealed Real Estate</div><div class="brand-s">Performance Dashboard &nbsp;&middot;&nbsp; <span id="fyLblHdr"></span></div></div></div>
+  <div class="hdr-r"><span class="sync-lbl">Last sync: <span id="st">cached</span></span>
+    <button class="btn" id="srb" onclick="openReportModal()" style="background:#4ade80;color:#132744;">&#9993; Send Report</button>
+    <button class="btn" id="rb" onclick="doRefresh()"><span id="ri">&#8635;</span> Refresh</button></div>
+</div>
+<div class="tab-bar">
+  <div class="tab on" onclick="setTab('monthly',this)">Monthly</div>
+  <div class="tab" onclick="setTab('quarterly',this)">Quarterly</div>
+  <div class="tab" onclick="setTab('annual',this)" id="annualTab">Annual (FY)</div>
+  <div class="tab" onclick="setTab('summary',this)">&#9776; Summary</div>
+</div>
+<div class="page">
+  <div id="statusBar"></div>
+  <div id="content"></div>
+</div>
+<div class="ftr"><span>SOLD &middot; New Campaigns &middot; Appraisals &middot; Leads &middot; Post Appointment &middot; monday.com API</span><span id="fd"></span></div>
+<!-- REPORT MODAL -->
+<div class="rpt-modal-bg h" id="rptModalBg">
+  <div class="rpt-modal">
+    <div class="rpt-modal-hdr">
+      <div>
+        <div class="rpt-modal-title">&#9993; Performance Report Preview</div>
+        <div class="rpt-modal-sub" id="rptModalSub">Review before sending</div>
+      </div>
+      <button class="rpt-close" onclick="closeReportModal()">&#x2715;</button>
+    </div>
+    <div class="rpt-modal-body">
+      <div class="rpt-preview">
+        <div class="rpt-email-shell">
+          <div class="rpt-email-meta">
+            <div><b>To:</b> michael@sealedrealestate.com.au</div>
+            <div><b>From:</b> Performance Dashboard</div>
+            <div><b>Subject:</b> <span id="rptSubject"></span></div>
+          </div>
+          <div class="rpt-email-body" id="rptEmailBody"></div>
+        </div>
+      </div>
+    </div>
+    <div class="rpt-modal-foot">
+      <button class="rpt-btn-cancel" onclick="closeReportModal()">Cancel</button>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <div style="font-size:11px;color:#8aa8c4;text-align:right">&#128161; <b style="color:#132744">To send in Outlook:</b> click Download, open the .html file, Select All (Ctrl+A), Copy (Ctrl+C), paste into a new Outlook email</div>
+        <div style="display:flex;gap:8px">
+          <button class="rpt-btn-copy" id="rptCopyHtmlBtn" onclick="copyReportHTML()">&#128203; Copy HTML</button>
+          <button class="rpt-btn-send" id="rptDownloadBtn" onclick="openReportTab()">&#11015; Download Report</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+
+
+
+
+var CACHED_DATA = {
+  // Cached as of 26 Jun 2026. FY25/26 = Jul 2025 - Jun 2026.
+  // annual = FY25/26 data only (Jul 2025 – Jun 2026):
+  //   Jul: 3/17 Cedric($18,400) + 2 Fairview($32,800) = $51,200
+  //   Aug: 1/13 Albenca($15,906)
+  //   Sep: 7/35 Plummer($9,900)
+  //   Oct: 105/15 Major($10,065)
+  //   Nov: 305/144 Collins($9,724) + 110/18 Station($13,904) = $23,628
+  //   Mar: 19 Giangala($25,800) + 5/30 Collins($10,224) = $36,024
+  //   Apr: 331/59 Autumn Terrace($14,300.90)
+  //   May: Mondaloc($20,000.70) + G20/18 Station($11,220) = $31,220.70
+  //   FY25/26 Total GCI = $192,244.60 | 12 sales | 24 listings | 93 appraisals
+  // cal_prev = ALL data before FY25/26 (i.e. anything with Sold Date < 2025-07-01).
+  //   In FY26/27 this cache becomes the "prev FY" comparison. In FY27/28 it still holds
+  //   because live fetch now uses d < YF (unbounded lower), pulling FY25/26 + all prior.
+  // prev_bars = all historical data bucketed by FY month position (Jul=0…Jun=11),
+  //   aggregated across ALL years before current FY. Cached here as FY24/25 only
+  //   (earliest data in monday.com).
+  monthly:  {GCI:0,          SOLD:0,  LIST:1,  APPR:4,  DK:0,  BOOKED:0, CONDUCTED:0},
+  quarterly:{GCI:45520.6,    SOLD:3,  LIST:6,  APPR:17, DK:6,  BOOKED:21,CONDUCTED:13},
+  // annual: ALL data (no lower date bound) — "all data not FY26/27 = FY25/26"
+  // SOLD=18 (all 18 on board), APPR=125 (all with date), CONDUCTED=73 (all on board)
+  // GCI: live fetch will compute from all 18 sales; cached $192,244.60 only had 12 sales
+  annual:   {GCI:192244.6,   SOLD:18, LIST:37, APPR:125, DK:23, BOOKED:83,CONDUCTED:73},
+  // cal_prev = 0 for all: nothing is "previous FY" until FY26/27 starts Jul 1 2026
+  cal_prev: {GCI:0, SOLD:0, LIST:0, APPR:0, DK:0, BOOKED:0, CONDUCTED:0},
+  cal_cur:  {GCI:192244.6,   SOLD:18, LIST:37, APPR:125, DK:23, BOOKED:83,CONDUCTED:73},
+  monthly_bars:{
+    // FY25/26 Jul-Jun: [Jul,Aug,Sep,Oct,Nov,Dec,Jan,Feb,Mar,Apr,May,Jun]
+    GCI:      [51200,  15906, 9900, 10065, 23628, 0,  0, 0, 36024, 14300.9, 31220.7, 0],
+    SOLD:     [2,      1,     1,    1,     2,     0,  0, 0, 2,     1,       2,       0],
+    LIST:     [0,      0,     0,    0,     0,     0,  2, 1, 4,     3,       4,       1],
+    APPR:     [0,      0,     0,    0,     0,     0,  10,14,7,     7,       52,      4],
+    DK:       [0,      0,     0,    0,     0,     0,  4, 1, 4,     2,       12,      0],
+    BOOKED:   [0,      0,     0,    0,     0,     0,  13,16,13,    9,       32,      0],
+    CONDUCTED:[0,      0,     0,    0,     0,     0,  10,14,9,     7,       32,      0]
+  },
+  q_bars:{
+    // Q1=Jul-Sep, Q2=Oct-Dec, Q3=Jan-Mar, Q4=Apr-Jun
+    GCI:      [77006,  33693, 36024, 45521.6],
+    SOLD:     [4,      3,     2,     3],
+    LIST:     [0,      0,     7,     8],
+    APPR:     [0,      0,     31,    62],
+    DK:       [0,      0,     9,     14],
+    BOOKED:   [0,      0,     42,    41],
+    CONDUCTED:[0,      0,     33,    39]
+  },
+  prev_bars:{
+    // All zeros: no "previous FY" data under current logic (all data = FY25/26).
+    // Will hold FY25/26 actuals once FY26/27 starts Jul 1 2026.
+    GCI:      [0,0,0,0,0,0,0,0,0,0,0,0],
+    SOLD:     [0,0,0,0,0,0,0,0,0,0,0,0],
+    LIST:     [0,0,0,0,0,0,0,0,0,0,0,0],
+    APPR:     [0,0,0,0,0,0,0,0,0,0,0,0],
+    DK:       [0,0,0,0,0,0,0,0,0,0,0,0],
+    BOOKED:   [0,0,0,0,0,0,0,0,0,0,0,0],
+    CONDUCTED:[0,0,0,0,0,0,0,0,0,0,0,0]
+  },
+  // Lead source breakdowns (FY25/26 YTD cached values)
+  lead_sources:{
+    monthly:  {'Door Knock':0,'Open Home':0,'Database':0,'RiTa':0,'Referral':0,'k2x':0,'Expired Listing':0,'Nurture Call':0,'Call In':0,'Fresh Network':0},
+    quarterly:{'Door Knock':6,'Open Home':0,'Database':0,'RiTa':0,'Referral':0,'k2x':0,'Expired Listing':0,'Nurture Call':0,'Call In':0,'Fresh Network':0},
+    annual:   {'Door Knock':23,'Open Home':0,'Database':0,'RiTa':0,'Referral':0,'k2x':0,'Expired Listing':0,'Nurture Call':0,'Call In':0,'Fresh Network':0}
+  }
+};
+
+// ── TARGETS per Business Performance Goal FY2026/2027 ────────────────────────
+// These targets auto-apply to whatever FY the dashboard is currently in.
+// Before 1 Jul 2026 they serve as forward-planning benchmarks against FY25/26 data.
+// From 1 Jul 2026 they become the live FY26/27 targets.
+//
+// Source of all counts (for reference / audit):
+//   SOLD / GCI  → monday.com board 1950001138; date4 = Sold Date; GCI = (Sold Price × Comm% ÷ 100) + Bonus Comm  [= Total Commission column]
+//   LISTINGS    → monday.com board 1949978416; groups "Pre Launching" & startsWith("Completed"); date4 = Date Authority
+//   APPRAISALS  → monday.com board 1950008297; date4 = Date of Appraisal
+//   DOOR KNOCKS → monday.com board 5016643164; Lead Source contains "Door Knock"; date_mkwy7e2v = Lead Date
+//   APPTS BOOKED→ same Leads board; items with datef6o1nn5f (Appointment Date & Time) not empty
+//   APPTS DONE  → monday.com board 5000848374; dateoexhb6hn = Date of Appraisal/visit
+//
+// GCI:        Monthly $30k–$42k  | Quarterly $90k–$126k | Annual min $360k / stretch $500k
+// Sales:      2–3/mo              | 22–32/year
+// Listings:   3–4/mo              | 32–46/year
+// Appraisals: 21–30/mo            | 260–368/year
+// Door Knock: 3 sessions/wk (~13/mo, 39/qtr, 156/yr)
+// Avg Commission: $16,000 (reference)
+// [min, stretch] format
+var TARGETS = {
+  GCI:      {m:[30000,42000], q:[90000,126000], ytd:[null,null], a:[360000,500000]},
+  SOLD:     {m:[2,3],         q:[6,9],           ytd:[null,null], a:[22,32]},
+  LIST:     {m:[3,4],         q:[9,12],          ytd:[null,null], a:[32,46]},
+  APPR:     {m:[21,30],       q:[63,90],         ytd:[null,null], a:[260,368]},
+  DK:       {m:[13,null],     q:[39,null],       ytd:[null,null], a:[156,null]},
+  BOOKED:   {m:[null,null],   q:[null,null],     ytd:[null,null], a:[null,null]},
+  CONDUCTED:{m:[null,null],   q:[null,null],     ytd:[null,null], a:[null,null]}
+};
+var FLBLS={GCI:'GCI (Total Commission)',SOLD:'Count of Sold (by Sold Date)',LIST:'Listing Count (by Date Authority)',APPR:'Appraisal Count',DK:'Door Knocking Count',BOOKED:'Appointments Booked'};
+var SLBLS={GCI:'GCI',SOLD:'Sold',LIST:'Listings',APPR:'Appraisals',DK:'Door Knocking Count',BOOKED:'Appts Booked'};
+// Source notes shown in kcard subtitles
+var SRCNOTE={
+  GCI:'Source: SOLD board · Total Commission column · filtered by Sold Date',
+  SOLD:'Source: SOLD board (board 1950001138) · filtered by Sold Date (date4)',
+  LIST:'Source: New Campaigns board · all entries with Date Authority filled (date4) · no date filter: all listings count as current FY',
+  APPR:'Source: Appraisals board (board 1950008297) · filtered by Date of Appraisal (date4)',
+  DK:'Source: Leads board · Lead Source contains "Door Knock" · filtered by Lead Date',
+  BOOKED:'Source: Leads board · items with Appointment Date & Time set',
+  CONDUCTED:'Source: Post Appointment board (board 5000848374) · filtered by Date of Appraisal/visit'
+};
+var UNITS={GCI:'',SOLD:' sales',LIST:' listings',APPR:' appraisals',DK:'',BOOKED:'',CONDUCTED:''};
+var MON_LBLS=['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
+var KEYS=['GCI','SOLD','LIST','APPR','DK','BOOKED'];
+var _now=new Date();
+var _cm=_now.getMonth()+1; // 1-12
+var _cy=_now.getFullYear();
+// Australian Financial Year: Jul 1 – Jun 30
+// FY_START_YEAR is the July that opened the current FY
+var FY_START_YEAR=_cm>=7?_cy:_cy-1;
+var FY_END_YEAR=FY_START_YEAR+1;
+var FY_LBL='FY'+String(FY_START_YEAR).slice(-2)+'/'+String(FY_END_YEAR).slice(-2);
+// Previous FY
+var PREV_FY_START=FY_START_YEAR-1;
+var PREV_FY_END=FY_START_YEAR;
+var PREV_FY_LBL='FY'+String(PREV_FY_START).slice(-2)+'/'+String(FY_START_YEAR).slice(-2);
+// CACHED_DATA is FY25/26. If we are still in FY25/26 (i.e. before 1 Jul 2026),
+// the CACHED_DATA year labels match. If the calendar has rolled into FY26/27,
+// the CACHED_DATA will be shown under PREV_FY_LBL automatically.
+function fyQuarterOf(m){if(m>=7&&m<=9)return 1;if(m>=10&&m<=12)return 2;if(m>=1&&m<=3)return 3;return 4;}
+var CQ=fyQuarterOf(_cm);
+var CY=FY_START_YEAR;
+var CM=_cm;
+var PREV_Y=PREV_FY_START;
+var FY_MONTHS_GLOBAL=[[FY_START_YEAR,7],[FY_START_YEAR,8],[FY_START_YEAR,9],[FY_START_YEAR,10],[FY_START_YEAR,11],[FY_START_YEAR,12],[FY_END_YEAR,1],[FY_END_YEAR,2],[FY_END_YEAR,3],[FY_END_YEAR,4],[FY_END_YEAR,5],[FY_END_YEAR,6]];
+var FY_CM_IDX=FY_MONTHS_GLOBAL.findIndex(function(ym){return ym[0]===(CM>=7?FY_START_YEAR:FY_END_YEAR)&&ym[1]===CM;});
+// Dynamically compute YTD targets based on elapsed months in FY (FY_CM_IDX+1 of 12)
+(function(){
+  var elapsedMonths = FY_CM_IDX + 1; // 1-12
+  var f = elapsedMonths / 12;
+  var keys = ['GCI','SOLD','LIST','APPR','DK','BOOKED'];
+  keys.forEach(function(k){
+    var ann = TARGETS[k].a;
+    TARGETS[k].ytd = [
+      ann[0] ? Math.round(ann[0] * f) : null,
+      ann[1] ? Math.round(ann[1] * f) : null
+    ];
+  });
+})();
+var tab='monthly';
+var DATA=JSON.parse(JSON.stringify(CACHED_DATA));
+var TOKEN=localStorage.getItem('sre_monday_token')||'';
+
+function gid(id){return document.getElementById(id);}
+function fmtD(v){return '$'+Math.round(v).toLocaleString('en-AU');}
+function fmtV(v,m){return m?fmtD(v):Number(Math.round(v)).toLocaleString('en-AU');}
+function clamp(v,mx){return Math.min(Math.max(v,0),mx||100);}
+function isMon(k){return k==='GCI';}
+function getSt(val,mn){if(!mn)return 'none';return val>=mn?'ok':val>=mn*0.6?'warn':'bad';}
+var ST_LBL={ok:'On Track',warn:'Approaching Target',bad:'Behind Target',none:'Tracking'};
+var ST_CLS={ok:'sb-ok',warn:'sb-warn',bad:'sb-bad',none:'sb-none'};
+function sbadge(st){return '<span class="sbadge '+ST_CLS[st]+'"><span class="sb-dot"></span>'+ST_LBL[st]+'</span>';}
+function showStatus(msg,type){gid('statusBar').innerHTML='<div class="status-bar '+type+'"><div class="status-dot"></div>'+msg+'</div>';}
+
+// ── monday.com LIVE FETCH ─────────────────────────────────────────────────────
+async function gql(query){
+  var r=await fetch('https://api.monday.com/v2',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN,'API-Version':'2024-01'},
+    body:JSON.stringify({query:query})
+  });
+  if(!r.ok) throw new Error('monday.com error: HTTP '+r.status);
+  var j=await r.json();
+  if(j.errors) throw new Error(j.errors[0].message);
+  return j.data;
+}
+
+async function getAllItems(boardId,cols){
+  var items=[],cursor=null,maxPages=10,page_num=0;
+  while(page_num<maxPages){
+    var cp=cursor?', cursor:"'+cursor+'"':'';
+    var q='{ boards(ids:['+boardId+']){ items_page(limit:100'+cp+'){ cursor items{ group{title} column_values(ids:'+JSON.stringify(cols)+'){ id text value ... on FormulaValue { display_value } ... on NumbersValue { number } } } } } }';
+    var d=await gql(q);
+    var page=d.boards[0].items_page;
+    page.items.forEach(function(i){i.group_title=i.group?i.group.title:'';});
+    items=items.concat(page.items);
+    page_num++;
+    if(!page.cursor||page.items.length<100) break;
+    cursor=page.cursor;
+  }
+  return items;
+}
+
+function cv(item,id){var c=item.column_values.find(function(x){return x.id===id;});return c?c.text||'':'';}
+function cn(item,id){var c=item.column_values.find(function(x){return x.id===id;});if(!c)return 0;function _p(s){return parseFloat(String(s||'').replace(/[$,\s]/g,''))||0;}if(c.display_value){var n=_p(c.display_value);if(n!==0)return n;}if(typeof c.number==='number')return c.number;if(c.text){var n2=_p(c.text);if(n2!==0)return n2;}if(!c.value)return 0;try{var v=JSON.parse(c.value);if(typeof v.number==='number')return v.number;if(v.value!==undefined)return _p(v.value);}catch(e){}return 0;}
+function inM(d,ym){return d&&d.startsWith(ym);}
+function inR(d,f,t){return d&&d>=f&&d<=t;}
+function commItem(i){return cn(i,'formula_mkyfmm26');}
+function isDK(i){var s=cv(i,'single_select6kbmk25').toLowerCase();return s.indexOf('door')>=0||s.indexOf('knock')>=0;}
+
+async function fetchLive(){
+  gid('ovt').textContent='Fetching all boards in parallel...';
+  // GCI source: "Total Comm" column on SOLD board = formula_mkyfmm26
+  // This is a FORMULA column (Comm Incl GST $ + Bonus Comm), confirmed from board schema Jun 2026.
+  // Auto-detect was wrong: it scanned for type==="numbers" but Total Comm is type==="formula".
+  var _detectedCommCol = 'formula_mkyfmm26';
+  var commColId = 'formula_mkyfmm26';
+
+  var results=await Promise.all([
+    // SOLD board: date4=Sold Date, formula_mkyfmm26=Total Comm (Comm Incl GST $ + Bonus Comm)
+    getAllItems('1950001138',['date4', commColId]),
+    // New Campaigns board: date4=Date Authority — ALL items, no group filter
+    getAllItems('1949978416',['date4']),
+    getAllItems('1950008297',['date4']),
+    getAllItems('5016643164',['date_mkwy7e2v','single_select6kbmk25','datef6o1nn5f']),
+    getAllItems('5000848374',['dateoexhb6hn'])
+  ]);
+  var sold=results[0];
+  // NOTE: Board column verification (as of Jun 2026):
+  // SOLD board: date4=Sold Date, formula_mkyfmm26=Total Comm (FORMULA: Comm Incl GST $ + Bonus Comm)
+  // New Campaigns board: date4=Date Authority — ALL entries included (no group filter)
+  // Appraisals board: date4=Date of Appraisal
+  // Leads board: date_mkwy7e2v=Date, single_select6kbmk25=Lead Source (Door Knock label), datef6o1nn5f=Appointment Date & Time
+  // Post Appointment board: dateoexhb6hn=Date of Appraisal
+  var list=results[1]; // all entries, no group filter
+  var appr=results[2];
+  var leads=results[3];
+  var cond=results[4];
+  gid('ovt').textContent='Almost done — building dashboard...';
+
+  // GCI = "Total Comm" formula column (formula_mkyfmm26) on SOLD board.
+  // = Comm Incl GST $ + Bonus Comm. Filtered by date4 (Sold Date).
+  function commItem(i){ return cn(i,'formula_mkyfmm26'); }
+
+  function isDK(i){var s=cv(i,'single_select6kbmk25').toLowerCase();return s.indexOf('door')>=0||s.indexOf('knock')>=0;}
+  function hasAppt(i){return cv(i,'datef6o1nn5f')!=='';}
+  // Listing = any New Campaigns item with Date Authority (date4) filled in
+  function isListing(i){return cv(i,'date4')!=='';}
+
+  function calc(soldF,listF,apprF,leadsF,condF){
+    var gci=sold.filter(soldF).reduce(function(a,i){return a+commItem(i);},0);
+    return {
+      GCI:      Math.round(gci*100)/100,
+      SOLD:     sold.filter(soldF).length,
+      LIST:     list.filter(listF).length,
+      APPR:     appr.filter(apprF).length,
+      DK:       leads.filter(function(i){return isDK(i)&&leadsF(i);}).length,
+      BOOKED:   leads.filter(function(i){return hasAppt(i)&&leadsF(i,'datef6o1nn5f');}).length,
+      CONDUCTED:cond.filter(condF).length
+    };
+  }
+
+  // Date range helpers — Australian Financial Year (Jul 1 – Jun 30)
+  var curYM=(CM<10?'0':'')+CM; // just MM for use below with year prefix
+  var curYMfull=(CM>=7?FY_START_YEAR:FY_END_YEAR)+'-'+curYM;
+  // FY quarters: Q1=Jul-Sep(FY_START), Q2=Oct-Dec(FY_START), Q3=Jan-Mar(FY_END), Q4=Apr-Jun(FY_END)
+  var QS={
+    1:[FY_START_YEAR+'-07-01',FY_START_YEAR+'-09-30'],
+    2:[FY_START_YEAR+'-10-01',FY_START_YEAR+'-12-31'],
+    3:[FY_END_YEAR+'-01-01',  FY_END_YEAR+'-03-31'],
+    4:[FY_END_YEAR+'-04-01',  FY_END_YEAR+'-06-30']
+  };
+  var QR=QS[CQ];
+  // Full FY range
+  var YF=FY_START_YEAR+'-07-01', YT=FY_END_YEAR+'-06-30';
+  // Previous FY range
+  var PF=PREV_FY_START+'-07-01', PT=FY_START_YEAR+'-06-30';
+  // FY bar months: Jul-Dec (FY_START_YEAR) then Jan-Jun (FY_END_YEAR)
+  var FY_MONTHS=[[FY_START_YEAR,7],[FY_START_YEAR,8],[FY_START_YEAR,9],[FY_START_YEAR,10],[FY_START_YEAR,11],[FY_START_YEAR,12],[FY_END_YEAR,1],[FY_END_YEAR,2],[FY_END_YEAR,3],[FY_END_YEAR,4],[FY_END_YEAR,5],[FY_END_YEAR,6]];
+  // Current month index in FY_MONTHS (used for bar highlight)
+  var FY_CM_IDX=FY_MONTHS.findIndex(function(ym){return ym[0]===(CM>=7?FY_START_YEAR:FY_END_YEAR)&&ym[1]===CM;});
+  // Monthly filter string for current month
+  var curYMStr=curYMfull;
+
+  function mf(d,dateCol){return inM(cv(d,dateCol||'date4'),curYMStr);}
+  function qf(d,dateCol){var dt=cv(d,dateCol||'date4');return inR(dt,QR[0],QR[1]);}
+  function yf(d,dateCol){var dt=cv(d,dateCol||'date4');return inR(dt,YF,YT);}
+  function pf(d,dateCol){var dt=cv(d,dateCol||'date4');return inR(dt,PF,PT);}
+
+  var monthly={
+    GCI:      Math.round(sold.filter(function(i){return inM(cv(i,'date4'),curYMStr);}).reduce(function(a,i){return a+commItem(i);},0)*100)/100,
+    SOLD:     sold.filter(function(i){return inM(cv(i,'date4'),curYMStr);}).length,
+    LIST:     list.filter(function(i){return isListing(i)&&inM(cv(i,'date4'),curYMStr);}).length,
+    APPR:     appr.filter(function(i){return inM(cv(i,'date4'),curYMStr);}).length,
+    DK:       leads.filter(function(i){return isDK(i)&&inM(cv(i,'date_mkwy7e2v'),curYMStr);}).length,
+    BOOKED:   leads.filter(function(i){return hasAppt(i)&&inM(cv(i,'datef6o1nn5f'),curYMStr);}).length,
+    CONDUCTED:cond.filter(function(i){return inM(cv(i,'dateoexhb6hn'),curYMStr);}).length
+  };
+  var quarterly={
+    GCI:      Math.round(sold.filter(function(i){return inR(cv(i,'date4'),QR[0],QR[1]);}).reduce(function(a,i){return a+commItem(i);},0)*100)/100,
+    SOLD:     sold.filter(function(i){return inR(cv(i,'date4'),QR[0],QR[1]);}).length,
+    LIST:     list.filter(function(i){return isListing(i)&&inR(cv(i,'date4'),QR[0],QR[1]);}).length,
+    APPR:     appr.filter(function(i){return inR(cv(i,'date4'),QR[0],QR[1]);}).length,
+    DK:       leads.filter(function(i){return isDK(i)&&inR(cv(i,'date_mkwy7e2v'),QR[0],QR[1]);}).length,
+    BOOKED:   leads.filter(function(i){return hasAppt(i)&&inR(cv(i,'datef6o1nn5f'),QR[0],QR[1]);}).length,
+    CONDUCTED:cond.filter(function(i){return inR(cv(i,'dateoexhb6hn'),QR[0],QR[1]);}).length
+  };
+  // GENERAL LOGIC: All data NOT for next FY falls into current FY.
+  // No lower date bound — everything on each board counts as FY25/26 until FY26/27 starts (Jul 1 2026).
+  // Upper bound = day before next FY start (YNF = next FY start date).
+  var YNF = FY_END_YEAR+'-07-01'; // next FY start
+  var annual={
+    GCI:      Math.round(sold.filter(function(i){var d=cv(i,'date4');return d&&d<YNF;}).reduce(function(a,i){return a+commItem(i);},0)*100)/100,
+    SOLD:     sold.filter(function(i){var d=cv(i,'date4');return d&&d<YNF;}).length,
+    // LIST: ALL items with Date Authority filled — no date filter (all = current FY)
+    LIST:     list.filter(function(i){return isListing(i);}).length,
+    APPR:     appr.filter(function(i){var d=cv(i,'date4');return d&&d<YNF;}).length,
+    DK:       leads.filter(function(i){var d=cv(i,'date_mkwy7e2v');return isDK(i)&&d&&d<YNF;}).length,
+    BOOKED:   leads.filter(function(i){var d=cv(i,'datef6o1nn5f');return hasAppt(i)&&d&&d<YNF;}).length,
+    CONDUCTED:cond.filter(function(i){var d=cv(i,'dateoexhb6hn');return d&&d<YNF;}).length
+  };
+  // cal_prev: under "all data not next-FY = current FY" rule, nothing is previous FY.
+  // When FY26/27 starts, cal_prev will hold FY25/26 totals for YoY comparison.
+  var cal_prev={GCI:0, SOLD:0, LIST:0, APPR:0, DK:0, BOOKED:0, CONDUCTED:0};
+
+  // Monthly bars — all 12 FY months (Jul–Jun)
+  var monthly_bars={};
+  KEYS.forEach(function(k){monthly_bars[k]=[];});
+  FY_MONTHS.forEach(function(ym){
+    var y=ym[0],mo=ym[1];
+    var ymStr=y+'-'+(mo<10?'0':'')+mo;
+    monthly_bars.GCI.push(Math.round(sold.filter(function(i){return inM(cv(i,'date4'),ymStr);}).reduce(function(a,i){return a+commItem(i);},0)*100)/100);
+    monthly_bars.SOLD.push(sold.filter(function(i){return inM(cv(i,'date4'),ymStr);}).length);
+    monthly_bars.LIST.push(list.filter(function(i){return isListing(i)&&inM(cv(i,'date4'),ymStr);}).length);
+    monthly_bars.APPR.push(appr.filter(function(i){return inM(cv(i,'date4'),ymStr);}).length);
+    monthly_bars.DK.push(leads.filter(function(i){return isDK(i)&&inM(cv(i,'date_mkwy7e2v'),ymStr);}).length);
+    monthly_bars.BOOKED.push(leads.filter(function(i){return hasAppt(i)&&inM(cv(i,'datef6o1nn5f'),ymStr);}).length);
+    monthly_bars.CONDUCTED.push(cond.filter(function(i){return inM(cv(i,'dateoexhb6hn'),ymStr);}).length);
+  });
+
+  // Q bars: all 4 FY quarters
+  var FY_Q_RANGES=[
+    [FY_START_YEAR+'-07-01',FY_START_YEAR+'-09-30'],
+    [FY_START_YEAR+'-10-01',FY_START_YEAR+'-12-31'],
+    [FY_END_YEAR+'-01-01',  FY_END_YEAR+'-03-31'],
+    [FY_END_YEAR+'-04-01',  FY_END_YEAR+'-06-30']
+  ];
+  var q_bars={};
+  KEYS.forEach(function(k){q_bars[k]=[];});
+  FY_Q_RANGES.forEach(function(qr){
+    var qf=qr[0], qt=qr[1];
+    q_bars.GCI.push(Math.round(sold.filter(function(i){return inR(cv(i,'date4'),qf,qt);}).reduce(function(a,i){return a+commItem(i);},0)*100)/100);
+    q_bars.SOLD.push(sold.filter(function(i){return inR(cv(i,'date4'),qf,qt);}).length);
+    q_bars.LIST.push(list.filter(function(i){return isListing(i)&&inR(cv(i,'date4'),qf,qt);}).length);
+    q_bars.APPR.push(appr.filter(function(i){return inR(cv(i,'date4'),qf,qt);}).length);
+    q_bars.DK.push(leads.filter(function(i){return isDK(i)&&inR(cv(i,'date_mkwy7e2v'),qf,qt);}).length);
+    q_bars.BOOKED.push(leads.filter(function(i){return hasAppt(i)&&inR(cv(i,'datef6o1nn5f'),qf,qt);}).length);
+    q_bars.CONDUCTED.push(cond.filter(function(i){return inR(cv(i,'dateoexhb6hn'),qf,qt);}).length);
+  });
+
+  // prev_bars: under "all data not FY26/27 = current FY" rule, there is no previous FY data.
+  // All zeros until FY26/27 starts, at which point FY25/26 data becomes the comparison year.
+  var prev_bars={};
+  KEYS.forEach(function(k){prev_bars[k]=[0,0,0,0,0,0,0,0,0,0,0,0];});
+  var MON_POS=[7,8,9,10,11,12,1,2,3,4,5,6];
+  function fyMonIdx(mo){return MON_POS.indexOf(mo);}
+  // prev_bars population removed: no "previous FY" data under current logic.
+  // Will be reinstated when FY26/27 starts and FY25/26 becomes the comparison year.
+
+    LIVE_ITEMS = {sold:sold, appr:appr, leads:leads};
+
+  // ── LEAD SOURCE BREAKDOWN ────────────────────────────────────────────────
+  function getLeadSources(filterFn){
+    var counts={};
+    leads.forEach(function(i){
+      if(!filterFn(i)) return;
+      var src=(cv(i,'single_select6kbmk25')||'').trim()||'Unknown';
+      counts[src]=(counts[src]||0)+1;
+    });
+    return counts;
+  }
+  var lead_sources={
+    monthly:  getLeadSources(function(i){return inM(cv(i,'date_mkwy7e2v'),curYMStr);}),
+    quarterly:getLeadSources(function(i){return inR(cv(i,'date_mkwy7e2v'),QR[0],QR[1]);}),
+    annual:   getLeadSources(function(i){var d=cv(i,'date_mkwy7e2v');return d&&d<YNF;})
+  };
+
+  return {monthly:monthly,quarterly:quarterly,annual:annual,cal_prev:cal_prev,cal_cur:annual,monthly_bars:monthly_bars,q_bars:q_bars,prev_bars:prev_bars,lead_sources:lead_sources};
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+
+// ── WEEKLY BREAKDOWN ─────────────────────────────────────────────────────────
+function getWeeks(year, month){
+  // Returns array of {start, end, label} for each Mon-Sun block in the month
+  var weeks = [];
+  var d = new Date(year, month-1, 1);
+  // Step back to Monday
+  while(d.getDay() !== 1) d.setDate(d.getDate()-1);
+  var monthEnd = new Date(year, month, 0); // last day of month
+  while(d <= monthEnd){
+    var ws = new Date(d);
+    var we = new Date(d); we.setDate(we.getDate()+6);
+    var cs = new Date(Math.max(ws, new Date(year,month-1,1)));
+    var ce = new Date(Math.min(we, monthEnd));
+    var label = 'W'+' '+(weeks.length+1)+'\n'+cs.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+    weeks.push({start:cs, end:ce, label:label});
+    d.setDate(d.getDate()+7);
+  }
+  return weeks;
+}
+
+function getQuarterWeeks(year, quarter){
+  // FY quarters: Q1=Jul-Sep, Q2=Oct-Dec, Q3=Jan-Mar, Q4=Apr-Jun
+  // year param = FY_START_YEAR for Q1/Q2, FY_END_YEAR for Q3/Q4
+  var qRanges={
+    1:{y:FY_START_YEAR, start:new Date(FY_START_YEAR,6,1), end:new Date(FY_START_YEAR,8,30)},
+    2:{y:FY_START_YEAR, start:new Date(FY_START_YEAR,9,1), end:new Date(FY_START_YEAR,11,31)},
+    3:{y:FY_END_YEAR,   start:new Date(FY_END_YEAR,0,1),   end:new Date(FY_END_YEAR,2,31)},
+    4:{y:FY_END_YEAR,   start:new Date(FY_END_YEAR,3,1),   end:new Date(FY_END_YEAR,5,30)}
+  };
+  var qInfo=qRanges[quarter]||qRanges[1];
+  var qStart=qInfo.start, qEnd=qInfo.end;
+  var weeks=[], d=new Date(qStart);
+  while(d.getDay()!==1) d.setDate(d.getDate()-1);
+  while(d<=qEnd){
+    var ws=new Date(d);
+    var we=new Date(d); we.setDate(we.getDate()+6);
+    var cs=new Date(Math.max(ws.getTime(),qStart.getTime()));
+    var ce=new Date(Math.min(we.getTime(),qEnd.getTime()));
+    weeks.push({start:cs,end:ce});
+    d.setDate(d.getDate()+7);
+  }
+  return weeks;
+}
+
+function dateToStr(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function weeklyActuals(weekStart, weekEnd, monthlyData){
+  // From monthly_bars we have monthly totals not weekly
+  // When live data available, compute from board items by date range
+  // For cached data: distribute using known weekly breakdown
+  var ws = dateToStr(weekStart), we = dateToStr(weekEnd);
+  var result = {};
+  // Use CACHED_WEEKLY if available, else return null (live fetch will populate)
+  if(window.WEEKLY_CACHE){
+    var wkey = ws+'_'+we;
+    return window.WEEKLY_CACHE[wkey] || null;
+  }
+  return null;
+}
+
+function buildWeeklyTable(weeks, today, monthlyTarget, liveItems, tgtKey){
+  var KPIs = ['GCI','SOLD','APPR','DK'];
+  var KLBL = {GCI:'GCI',SOLD:'Sold',APPR:'Appraisals',DK:'Door Knocking Count'};
+  var numWeeks = weeks.length;
+  var tgtPeriod = tgtKey || 'm';
+  // Total target for the period
+  var periodTgt = {};
+  KPIs.forEach(function(k){ periodTgt[k] = TARGETS[k][tgtPeriod] ? TARGETS[k][tgtPeriod][0] : null; });
+
+  // Build weekly actuals from live items or cached
+  var todayStr = dateToStr(today);
+  var wkActuals = weeks.map(function(w){
+    var ws = dateToStr(w.start), we = dateToStr(w.end);
+    var act = {};
+    if(liveItems){
+      act.GCI  = Math.round(liveItems.sold.filter(function(i){var d=cv(i,'date4');return d>=ws&&d<=we;}).reduce(function(a,i){return a+commItem(i);},0)*100)/100;
+      act.SOLD = liveItems.sold.filter(function(i){var d=cv(i,'date4');return d>=ws&&d<=we;}).length;
+      act.APPR = liveItems.appr.filter(function(i){var d=cv(i,'date4');return d>=ws&&d<=we;}).length;
+      act.DK   = liveItems.leads.filter(function(i){return isDK(i)&&cv(i,'date_mkwy7e2v')>=ws&&cv(i,'date_mkwy7e2v')<=we;}).length;
+    } else {
+      var now2=new Date(); var isJun2026=(now2.getFullYear()===2026&&now2.getMonth()===5);
+      if(isJun2026 && weeks.length<=5){
+        var CACHED={GCI:[0,0,0,0,0],SOLD:[0,0,0,0,0],APPR:[1,2,1,0,0],DK:[2,0,0,0,0]};
+        var wi=weeks.indexOf(w);
+        KPIs.forEach(function(k){act[k]=(CACHED[k]&&CACHED[k][wi])||0;});
+      } else {
+        KPIs.forEach(function(k){act[k]=0;});
+      }
+    }
+    return act;
+  });
+
+  // Build header
+  var html='<table class="weekly-table"><thead><tr><th class="kpi-col">KPI</th>';
+  weeks.forEach(function(w,i){
+    var ws=dateToStr(w.start),we=dateToStr(w.end);
+    var isCur=todayStr>=ws&&todayStr<=we;
+    var isPast=we<todayStr;
+    var lbl='W'+(i+1)+'<br><span style="font-size:9px;font-weight:500;opacity:.75">'
+      +w.start.toLocaleDateString('en-AU',{day:'numeric',month:'short'})
+      +(w.start.toDateString()!==w.end.toDateString()?'&ndash;'+w.end.toLocaleDateString('en-AU',{day:'numeric',month:'short'}):'')
+      +'</span>';
+    html+='<th'+(isCur?' style="background:#1e3d70"':'')+'>'+lbl+'</th>';
+  });
+  html+='</tr></thead><tbody>';
+
+  KPIs.forEach(function(k){
+    var m=isMon(k);
+    var total=periodTgt[k];
+    html+='<tr><td class="kpi-label">'+KLBL[k]
+      +'<span class="w-tgt">'+(total?'Target: '+(m?fmtD(total):total)+' total':'No target')+'</span></td>';
+
+    var cumulativeActual=0; // running total of actuals so far
+    weeks.forEach(function(w,i){
+      var ws=dateToStr(w.start),we=dateToStr(w.end);
+      var isCur=todayStr>=ws&&todayStr<=we;
+      var isPast=we<todayStr;
+      var act=wkActuals[i][k]||0;
+      var cell='';
+
+      if(!total){
+        // No target — just show actuals
+        cell='<span class="'+(isPast||isCur?'':'w-future')+'">'+(isPast||isCur?fmtV(act,m):'\u2014')+'</span>';
+      } else {
+        if(isPast){
+          cumulativeActual+=act;
+          // What was needed this week to be on pace?
+          var weeksLeft=numWeeks-i; // including this week
+          // Pace needed entering this week = remaining target / weeks remaining
+          var neededThisWeek=Math.round((total-((i>0?cumulativeActual-act:0)))/weeksLeft*10)/10;
+          var ok=act>=neededThisWeek;
+          cell='<span class="'+(ok?'w-past-ok':'w-past-bad')+'">'+(m?fmtD(act):act)+'</span>'
+            +'<span class="w-tgt">'+(ok?'\u2713 on pace':'vs '+(m?fmtD(neededThisWeek):neededThisWeek)+' needed')+'</span>';
+        } else if(isCur){
+          cumulativeActual+=act;
+          // Remaining target = total - cumulative so far
+          var remaining=Math.max(total-cumulativeActual,0);
+          // Weeks left including this one
+          var weeksFromHere=numWeeks-i;
+          // If behind: catch-up needed this week
+          var idealSoFar=Math.round(total*(i+1)/numWeeks*10)/10; // what we should have by end of this week
+          var catchUpThis=Math.max(Math.round((total-cumulativeActual)*10)/10,0);
+          // What to do THIS week to get back on track
+          var needThisWeek=Math.round(catchUpThis/weeksFromHere*10)/10; // spread catch-up over remaining weeks
+          // BUT: show this week's specific need
+          var thisWeekSpecific=Math.round((idealSoFar-cumulativeActual+act+(total-total/numWeeks*(i+1)))*10/10)/10;
+          // Simpler: remaining / weeks left = needed per remaining week
+          var neededPerWeek=Math.round(remaining/(weeksFromHere)*10)/10;
+          cell='<span class="w-cur-val">'+(m?fmtD(act):act)+'</span>';
+          if(remaining>0){
+            cell+='<span class="w-cur-need">Gap: '+(m?fmtD(remaining):remaining)
+              +'<br>Need '+(m?fmtD(neededPerWeek):neededPerWeek)+'/wk</span>';
+          } else {
+            cell+='<span class="w-cur-ok">\u2713 On track!</span>';
+          }
+        } else {
+          // Future — show what's needed per week from here
+          // Calculate remaining after current week
+          var passedIdx=weeks.findIndex(function(ww){var ws2=dateToStr(ww.start),we2=dateToStr(ww.end);return todayStr>=ws2&&todayStr<=we2;});
+          var actualSoFarEnd=0;
+          for(var pi=0;pi<=passedIdx;pi++) actualSoFarEnd+=(wkActuals[pi][k]||0);
+          var remFromNow=Math.max(total-actualSoFarEnd,0);
+          var futureWeeks=numWeeks-passedIdx-1;
+          var neededEach=futureWeeks>0?Math.round(remFromNow/futureWeeks*10)/10:0;
+          cell='<span class="w-future">'+(m?fmtD(neededEach):neededEach)+'</span>'
+            +'<span class="w-tgt">needed/wk</span>';
+        }
+      }
+      html+='<td'+(isCur?' class="w-cur-cell"':'')+'>'+cell+'</td>';
+    });
+    html+='</tr>';
+  });
+
+  html+='</tbody></table>';
+  return html;
+}
+
+// Store live board items for weekly calc
+var LIVE_ITEMS = null;
+
+function curStrip(vals,label,tkey){
+  var ks=['GCI','SOLD','LIST','APPR'];
+  var items=ks.map(function(k){
+    var val=vals[k]||0,t=TARGETS[k][tkey],mn=t&&t[0];
+    var pct=mn?Math.round(val/mn*100):null,st=getSt(val,mn);
+    var bc=st==='ok'?'cb-ok':st==='warn'?'cb-warn':st==='bad'?'cb-bad':'cb-none';
+    var badge=mn?'<span class="cur-badge '+bc+'">'+pct+'% of target</span>':'<span class="cur-badge cb-none">Tracking</span>';
+    return '<div class="cur-kpi"><div class="cur-kpi-lbl">'+SLBLS[k]+'</div><div class="cur-kpi-val">'+fmtV(val,isMon(k))+'</div>'+badge+'</div>';
+  });
+  return '<div class="cur-strip"><div style="padding:10px 16px 10px 0;border-right:1px solid #1e3d70;flex-shrink:0"><div style="font-size:10px;font-weight:800;color:#8eb8d8;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px">Current</div><div style="font-size:14px;font-weight:800;color:#fff">'+label+'</div></div><div class="cur-kpis" style="grid-template-columns:repeat(4,1fr)">'+items.join('')+'</div></div>';
+}
+
+function kcard(k,val,tkey,lbl){
+  var t=TARGETS[k][tkey],mn=t&&t[0],str=t&&t[1],m=isMon(k),st=getSt(val,mn);
+  var pct=mn?'<div class="rate-pct">'+Math.round(val/mn*100)+'% of target</div>':'';
+  var gap='';
+  if(mn){var g=Math.max(mn-val,0);
+    if(g>0)gap='<div class="reco-gap">Target gap: <span class="gap-val">'+(m?fmtD(g):g+UNITS[k])+'</span></div>';
+    else{gap='<div class="reco-gap">Target gap: <span class="gap-met">None \u2014 met!</span></div>';
+      if(str&&val<str)gap+='<div class="reco-stretch">Stretch: '+(m?fmtD(str-val):(str-val))+UNITS[k]+' more</div>';}}
+  var sp=(str||mn||1)*1.2,fp=clamp(val/sp*100),tp=clamp(mn?mn/sp*100:0),sp2=str?clamp(str/sp*100):0;
+  var fc=st==='ok'?'pf-ok':st==='warn'?'pf-warn':'pf-bad';
+  var sm=str?'<div class="pbar-str" style="left:'+sp2+'%"></div>':'';
+  var pb=mn?'<div class="pbar-wrap"><div class="pbar-row"><span class="pbar-lbl">'+fmtV(val,m)+'</span><span class="pbar-lbl">Target '+fmtV(mn,m)+(str?' / Stretch '+fmtV(str,m):'')+'</span></div><div class="pbar-track"><div class="pbar-fill '+fc+'" style="width:'+fp+'%"></div><div class="pbar-tgt" style="left:'+tp+'%"></div>'+sm+'</div></div>':'';
+  var src=SRCNOTE[k]?'<div style="font-size:10px;color:#8aa8c4;margin-top:6px;line-height:1.3">'+SRCNOTE[k]+'</div>':'';
+  return '<div class="kcard"><div class="klbl">'+FLBLS[k]+'</div><div class="kval">'+fmtV(val,m)+'</div><div class="kperiod">'+lbl+'</div>'+sbadge(st)+pct+gap+pb+src+'</div>';
+}
+
+function rateCards(sv,lv,av){
+  // Per Business Performance Goal 2026/2027:
+  //   Listings -> Sales: 70%
+  //   Appraisal -> Listing: 1:7 (1 listing per 7 appraisals)
+
+  // ── Card 1: Listing → Sold rate (target 70%) ─────────────────────────────
+  var SR_TGT=70;
+  var rate=lv>0?Math.round(sv/lv*100):0;
+  var st1=rate>=SR_TGT?'ok':rate>=(SR_TGT*0.6)?'warn':'bad';
+  var fc1=st1==='ok'?'pf-ok':st1==='warn'?'pf-warn':'pf-bad';
+  var gap1=Math.max(SR_TGT-rate,0);
+  var gH1=gap1>0
+    ?'<div class="reco-gap">Target gap: <span class="gap-val">'+gap1+'%</span></div>'
+    :'<div class="reco-gap">Target gap: <span class="gap-met">Met \u2714</span></div>';
+  var scale1=SR_TGT*1.3;
+  var c1='<div class="ratio-card">'
+    +'<div class="klbl">Listing \u2192 Sold Rate</div>'
+    +'<div class="ratio-big">'+rate+'%</div>'
+    +'<div class="ratio-sub">'+sv+' sold from '+lv+' listings \u00b7 Target '+SR_TGT+'%</div>'
+    +sbadge(st1)
+    +'<div class="rate-pct">'+rate+'% of '+SR_TGT+'% target</div>'
+    +gH1
+    +'<div class="pbar-wrap"><div class="pbar-row"><span class="pbar-lbl">'+rate+'%</span><span class="pbar-lbl">Target '+SR_TGT+'%</span></div>'
+    +'<div class="pbar-track"><div class="pbar-fill '+fc1+'" style="width:'+clamp(rate/scale1*100)+'%"></div>'
+    +'<div class="pbar-tgt" style="left:'+clamp(SR_TGT/scale1*100)+'%"></div></div></div>'
+  +'</div>';
+
+  // ── Card 2: Appraisal → Listing rate (target 1:7) ────────────────────────
+  var AL_TGT=7; // appraisals per listing
+  var exp=av>0?Math.round(av/AL_TGT):0;
+  var actualNum=lv>0&&av>0?av/lv:null;
+  var actualStr=actualNum!==null?actualNum.toFixed(1):'\u2014';
+  // Lower ratio = better; on track if ratio ≤ 7
+  var st2=actualNum===null?'none':actualNum<=AL_TGT?'ok':actualNum<=AL_TGT*1.5?'warn':'bad';
+  var fc2=st2==='ok'?'pf-ok':st2==='warn'?'pf-warn':'pf-bad';
+  var miss=Math.max(exp-lv,0);
+  var gH2=exp===0&&lv===0
+    ?'<div class="reco-gap"><span style="color:#8aa8c4">No data yet</span></div>'
+    :miss>0
+      ?'<div class="reco-gap">'+miss+' more listing'+(miss!==1?'s':'')+' needed to hit 1:'+AL_TGT+' target</div>'
+      :'<div class="reco-gap">Target gap: <span class="gap-met">Met \u2714</span></div>';
+  var c2='<div class="ratio-card">'
+    +'<div class="klbl">Appraisal \u2192 Listing Rate</div>'
+    +'<div class="ratio-big">1 : '+actualStr+'</div>'
+    +'<div class="ratio-sub">'+lv+' listings from '+av+' appraisals \u00b7 Target 1 : '+AL_TGT+'</div>'
+    +sbadge(st2)
+    +'<div class="rate-pct">Expected listings from appraisals: '+exp+'</div>'
+    +gH2
+    +'<div class="pbar-wrap"><div class="pbar-row"><span class="pbar-lbl">'+lv+' listed</span><span class="pbar-lbl">Target: '+exp+'</span></div>'
+    +'<div class="pbar-track"><div class="pbar-fill '+fc2+'" style="width:'+clamp(lv/Math.max(exp,1)*100)+'%"></div>'
+    +'<div class="pbar-tgt" style="left:'+clamp(100)+'%"></div></div></div>'
+  +'</div>';
+
+  return c1+c2;
+}
+
+function barTile(k,vals,lbls,curI,barW,barG,totLbl){
+  var m=isMon(k),total=vals.reduce(function(a,b){return a+b;},0),mx=Math.max.apply(null,vals.concat(1));
+  var bars='';
+  // For money values, rotate labels to prevent overlap
+  var rotateLbl = m;
+  vals.forEach(function(v,i){
+    var isCur=i===curI,bh=Math.max(Math.round(v/mx*110),v>0?4:0),alpha=isCur?'':'88',lbl=v>0?fmtV(v,m):'';
+    var lblHtml = lbl ? '<div class="mbar-lbl" style="'+(rotateLbl?'transform:translateX(-50%) rotate(-40deg);transform-origin:bottom center;top:-28px;font-size:10px;':'')+'">'+lbl+'</div>' : '';
+    bars+='<div class="mc" style="width:'+(barW+barG)+'px;flex:none"><div class="mbar-col" style="width:'+(barW+barG)+'px"><div class="mbar" style="background:#132744'+alpha+';height:'+bh+'px;width:'+barW+'px">'+lblHtml+'</div></div><div class="mlbl">'+lbls[i]+'</div></div>';
+  });
+  var ptop = rotateLbl ? '44px' : '30px';
+  return '<div class="chart-tile"><div class="ctop"><div class="ctitle-nm">'+FLBLS[k]+'</div><div style="text-align:right"><div class="ctitle-tot">'+fmtV(total,m)+'</div><div class="ctitle-sub">'+totLbl+'</div></div></div><div style="position:relative"><div class="chart-wrap" style="height:160px;gap:4px;justify-content:flex-start;padding-top:'+ptop+'">'+bars+'</div></div></div>';
+}
+
+function qTile(k,vals){
+  var m=isMon(k);
+  var lbls=[FY_LBL+' Q1\nJul–Sep',FY_LBL+' Q2\nOct–Dec',FY_LBL+' Q3\nJan–Mar',FY_LBL+' Q4\nApr–Jun'];
+  var total=vals.reduce(function(a,b){return a+b;},0),mx=Math.max.apply(null,vals.concat(1));
+  var bars='';
+  vals.forEach(function(v,i){
+    var isCur=i===CQ-1,isFut=i>CQ-1;
+    var bh=Math.max(Math.round(v/mx*100),v>0?4:0);
+    var alpha=isCur?'':isFut?'22':'55';
+    var lbl=v>0?fmtV(v,m):'';
+    var ql=lbls[i].replace('\n','<br>');
+    bars+='<div class="mc" style="flex:1;min-width:0">'
+      +'<div class="mbar-col" style="width:100%;justify-content:center">'
+      +'<div class="mbar" style="background:#132744'+alpha+';height:'+bh+'px;width:80%">'
+      +(lbl?'<div class="mbar-lbl">'+lbl+'</div>':'')
+      +'</div></div>'
+      +'<div class="mlbl" style="font-size:11px;font-weight:700;width:100%;text-align:center;white-space:normal;line-height:1.3">'+ql+'</div>'
+      +'</div>';
+  });
+  return '<div class="chart-tile"><div class="ctop"><div class="ctitle-nm">'+FLBLS[k]+'</div><div style="text-align:right"><div class="ctitle-tot">'+fmtV(total,m)+'</div><div class="ctitle-sub">'+FY_LBL+' YTD Total</div></div></div><div style="position:relative"><div class="chart-wrap" style="height:150px;gap:8px;justify-content:flex-start;padding-top:26px">'+bars+'</div></div></div>';
+}
+
+function splitTile(k,v25,v26){
+  var m=isMon(k),lbl25=['Jul','Aug','Sep','Oct','Nov','Dec'],lbl26=['Jan','Feb','Mar','Apr','May','Jun'];
+  var t25=v25.reduce(function(a,b){return a+b;},0),t26=v26.reduce(function(a,b){return a+b;},0),mx=Math.max.apply(null,v25.concat(v26).concat(1));
+  function side(vals,lbls,cur){
+    var b='';
+    vals.forEach(function(v,i){
+      var isCur=cur&&i===5,bh=Math.max(Math.round(v/mx*100),v>0?3:0),alpha=isCur?'':'88';
+      var lbl=v>0?fmtV(v,m):'';
+      b+='<div class="mc" style="width:62px;flex:none">'
+        +'<div class="mbar-col" style="width:62px">'
+        +'<div class="mbar" style="background:#132744'+alpha+';height:'+bh+'px;width:50px">'
+        +(lbl?'<div class="mbar-lbl" style="font-size:10px;white-space:nowrap;'+(m?'transform:translateX(-50%) rotate(-40deg);transform-origin:bottom center;top:-28px;':'')+'">'+lbl+'</div>':'')
+        +'</div></div>'
+        +'<div class="mlbl" style="font-size:11px;font-weight:700;">'+lbls[i]+'</div>'
+        +'</div>';
+    });
+    return b;
+  }
+  // Put year totals in ctop, not above charts — clears space for bar labels
+  return '<div class="chart-tile">'
+    +'<div class="ctop">'
+    +'<div class="ctitle-nm">'+FLBLS[k]+'</div>'
+    +'<div style="display:flex;gap:16px;align-items:flex-start">'
+    +'<div style="text-align:right"><div style="font-size:11px;font-weight:800;color:#8aa8c4">'+PREV_FY_LBL+'</div><div class="ctitle-tot" style="color:#8aa8c4">'+fmtV(t25,m)+'</div></div>'
+    +'<div style="text-align:right"><div style="font-size:11px;font-weight:800;color:#132744">'+FY_LBL+'</div><div class="ctitle-tot">'+fmtV(t26,m)+'</div></div>'
+    +'</div></div>'
+    +'<div class="split-grid">'
+    +'<div>'
+    +'<div class="chart-wrap" style="height:150px;gap:2px;justify-content:flex-start;padding-top:36px;overflow:visible">'+side(v25,lbl25,false)+'</div></div>'
+    +'<div class="split-div"><div class="split-div-line"></div></div>'
+    +'<div>'
+    +'<div class="chart-wrap" style="height:150px;gap:2px;justify-content:flex-start;padding-top:36px;overflow:visible">'+side(v26,lbl26,true)+'</div></div>'
+    +'</div></div>';
+}
+
+function yrCard(k,p,c){
+  var m=isMon(k),v25=p[k]||0,v26=c[k]||0,mx=Math.max(v25,v26,1);
+  var chg=v25>0?Math.round((v26-v25)/v25*100):null,ct=chg!==null?(chg>=0?'+':'')+chg+'%':'\u2014',cc=chg===null?'#5a7a9a':chg>=0?'#1a6644':'#8b1a1a';
+  return '<div class="yr-card"><div class="klbl">'+FLBLS[k]+'</div><div class="yr-row"><div class="yr-blk"><div class="yr-yr-lbl">'+PREV_FY_LBL+'</div><div class="yr-n-old">'+fmtV(v25,m)+'</div></div><div class="yr-arrow">&rarr;</div><div class="yr-blk"><div class="yr-yr-lbl">'+FY_LBL+'</div><div class="yr-n-new">'+fmtV(v26,m)+'</div></div><div class="yr-chg" style="color:'+cc+'">'+ct+'</div></div><div class="yr-bar-bg"><div class="yr-bar-fill" style="width:'+clamp(v26/mx*100)+'%"></div></div></div>';
+}
+
+
+function buildQTargetsTable(d){
+  // Compact Q1-Q4 table: actual vs target per KPI, with catch-up compensation logic
+  var KPIs=['GCI','SOLD','LIST','APPR','DK','BOOKED'];
+  var KLBL={GCI:'GCI (Comm)',SOLD:'Sold',LIST:'Listings',APPR:'Appraisals',DK:'Door Knocking Count',BOOKED:'Appts Booked'};
+  var qNames=['Q1','Q2','Q3','Q4'];
+  var qSub=['Jul–Sep','Oct–Dec','Jan–Mar','Apr–Jun'];
+
+  // Build per-quarter actuals from q_bars (all 4 FY quarters: Q1=Jul-Sep … Q4=Apr-Jun)
+  var qData=[0,1,2,3].map(function(qi){
+    return {GCI:d.q_bars.GCI[qi]||0,SOLD:d.q_bars.SOLD[qi]||0,LIST:d.q_bars.LIST[qi]||0,APPR:d.q_bars.APPR[qi]||0,DK:d.q_bars.DK[qi]||0,BOOKED:d.q_bars.BOOKED[qi]||0};
+  });
+
+  // Build header
+  var html='<table class="qtgt-table"><thead><tr><th class="kpi-col">KPI / Qtr Target</th>';
+  for(var qi=0;qi<4;qi++){
+    var isCur=qi===CQ-1, isPast=qi<CQ-1, isFut=qi>CQ-1;
+    var badge=isCur?'▶ Current':isPast?'✓ Done':'Upcoming';
+    html+='<th'+(isCur?' style="background:#1e3d70"':'')+'>'+qNames[qi]
+      +'<br><span style="font-size:9px;font-weight:500;opacity:.75">'+qSub[qi]+'</span>'
+      +'<br><span style="font-size:9px;font-weight:700;opacity:.85">'+badge+'</span></th>';
+  }
+  html+='</tr></thead><tbody>';
+
+  KPIs.forEach(function(k){
+    var m=isMon(k), qTgt=TARGETS[k].q[0]; // per-quarter target (base)
+    var annualTgt=TARGETS[k].a[0];         // annual target
+
+    html+='<tr><td class="kpi-label">'+KLBL[k]
+      +(qTgt?'<span class="q-tgt-lbl">'+( m?fmtD(qTgt):qTgt)+'/qtr target</span>':'<span class="q-tgt-lbl">No target set</span>')+'</td>';
+
+    // Compute cumulative deficit from past quarters (for catch-up logic)
+    var cumulativeDef=0;
+    for(var pi=0;pi<CQ-1;pi++){
+      if(qTgt&&qData[pi]) cumulativeDef+=Math.max(qTgt-(qData[pi][k]||0),0);
+    }
+    var remainingQtrs=4-CQ; // quarters after current (Q3, Q4 if CQ=2)
+    var totalFutureQtrs=4-CQ+1; // current + remaining
+
+    for(var qi=0;qi<4;qi++){
+      var isCur=qi===CQ-1, isPast=qi<CQ-1, isFut=qi>CQ-1;
+      var val=qData[qi]?qData[qi][k]:null;
+      var cell='';
+
+      if(!qTgt){
+        // No target — just show actuals or dash
+        if(isFut||val===null){
+          cell='<span class="q-future">—</span>';
+        } else {
+          cell='<span class="'+(isPast?'q-actual-ok':'q-actual-cur')+'">'+fmtV(val,m)+'</span>';
+        }
+      } else if(isPast){
+        // Past quarter: show actual vs target, flag gap
+        var v=val||0, gap=Math.max(qTgt-v,0), hit=v>=qTgt;
+        cell='<span class="'+(hit?'q-actual-ok':'q-actual-bad')+'">'+fmtV(v,m)+'</span>';
+        if(hit){
+          var surplus=v-qTgt;
+          cell+='<span class="q-sub q-sub-ok">✓ Hit'+(surplus>0?' +'+fmtV(surplus,m):'')+'</span>';
+        } else {
+          cell+='<span class="q-sub q-sub-bad">Gap: '+(m?fmtD(gap):gap)+'</span>';
+        }
+      } else if(isCur){
+        // Current quarter: show actual + remaining gap + compensation needed
+        var v=val||0, gap=Math.max(qTgt-v,0);
+        cell='<span class="q-actual-cur">'+fmtV(v,m)+'</span>';
+        if(gap<=0){
+          cell+='<span class="q-sub q-sub-ok">✓ On track!</span>';
+          // Still show compensation pill if past quarters left a deficit
+          if(cumulativeDef>0){
+            var catchPerFuture=remainingQtrs>0?Math.round((cumulativeDef/remainingQtrs)*10)/10:0;
+            cell+='<span class="q-catchup-pill">+'+fmtV(catchPerFuture,m)+'/qtr to cover past deficit</span>';
+          }
+        } else {
+          cell+='<span class="q-sub q-sub-bad">Qtr gap: '+(m?fmtD(gap):gap)+'</span>';
+          // Show what's needed in future quarters to still hit annual target
+          if(remainingQtrs>0){
+            var totalShortfall=gap+cumulativeDef; // still owed this qtr + from past
+            // Future qtrs need their own target PLUS spread the shortfall
+            var extraPerFuture=Math.round((totalShortfall/remainingQtrs)*10)/10;
+            var futureNeed=qTgt+(m?extraPerFuture:Math.round(extraPerFuture));
+            cell+='<span class="q-catchup-pill">Future qtrs need '+fmtV(futureNeed,m)+' each</span>';
+          }
+        }
+      } else {
+        // Future quarter: show actuals if any exist, else show projected need with catch-up
+        var v=val||0;
+        if(v>0){
+          cell='<span class="q-actual-cur">'+fmtV(v,m)+'</span>';
+          cell+='<span class="q-sub q-sub-info">Early data</span>';
+        } else {
+          // Compute catch-up needed: spread remaining deficit over remaining future quarters from here
+          var curVal=qData[CQ-1]?qData[CQ-1][k]:0;
+          var curGap=Math.max(qTgt-(curVal||0),0);
+          var totalOwed=cumulativeDef+curGap;
+          var catchUp=remainingQtrs>0?Math.round((totalOwed/remainingQtrs)*10)/10:0;
+          var needThisQtr=qTgt+(m?catchUp:Math.round(catchUp));
+          cell='<span class="q-future">'+(m?fmtD(needThisQtr):needThisQtr)+' needed</span>';
+          cell+='<span class="q-sub q-sub-info">Base: '+(m?fmtD(qTgt):qTgt)
+            +(catchUp>0?' <span style="color:#c8820a">+'+fmtV(catchUp,m)+' catch-up</span>':'')
+            +'</span>';
+          if(catchUp>0){
+            cell+='<span class="q-catchup-pill">Covers '+(m?fmtD(totalOwed):totalOwed)+' deficit</span>';
+          } else {
+            cell+='<span class="q-catchup-pill q-cp-good">No catch-up needed</span>';
+          }
+        }
+      }
+      html+='<td'+(isCur?' class="q-cur-cell"':'')+'>'+cell+'</td>';
+    }
+    html+='</tr>';
+  });
+
+  // Summary row: annual target pace check
+  html+='<tr style="background:#f8fafc"><td class="kpi-label" style="color:#132744;font-weight:800">ANNUAL PACE</td>';
+  for(var qi=0;qi<4;qi++){
+    var isCur=qi===CQ-1;
+    var ytdActual=0;
+    for(var pi=0;pi<=qi&&pi<=CQ-1;pi++) if(qData[pi]) ytdActual+=(qData[pi].GCI||0);
+    var annTgt=TARGETS.GCI.a[0];
+    var qTgtGCI=TARGETS.GCI.q[0];
+    if(qi<CQ){
+      var expectedYTD=qTgtGCI*(qi+1);
+      var pace=annTgt>0?Math.round(ytdActual/expectedYTD*100):null;
+      var paceOk=pace!=null&&pace>=100;
+      html+='<td'+(isCur?' class="q-cur-cell"':'')+'>'
+        +'<span class="'+(paceOk?'q-actual-ok':'q-actual-bad')+'" style="font-size:11px">'+(pace!=null?pace+'%':'—')+' of pace</span>'
+        +'<span class="q-sub q-sub-info">YTD '+fmtD(ytdActual)+'</span></td>';
+    } else {
+      var remainAfterCur=Math.max(annTgt-(qData[CQ-1]?(function(){var s=0;for(var pi=0;pi<CQ;pi++) if(qData[pi]) s+=qData[pi].GCI||0;return s;})():0),0);
+      var remQ=4-CQ;
+      var needPerQ=remQ>0?Math.round(remainAfterCur/remQ):0;
+      html+='<td><span class="q-future" style="font-size:11px">'+fmtD(needPerQ)+'/qtr</span>'
+        +'<span class="q-sub q-sub-info">to hit '+fmtD(annTgt)+'</span></td>';
+    }
+  }
+  html+='</tr>';
+
+  html+='</tbody></table>';
+  return html;
+}
+
+
+function yrCompareTile(k,prev,cur){
+  var m=isMon(k);
+  var v25=prev[k]||0, v26=cur[k]||0;
+  var mx=Math.max(v25,v26,1);
+  var bh25=Math.max(Math.round(v25/mx*100),v25>0?4:0);
+  var bh26=Math.max(Math.round(v26/mx*100),v26>0?4:0);
+  var chg=v25>0?Math.round((v26-v25)/v25*100):null;
+  var chgTxt=chg!==null?(chg>=0?'+':'')+chg+'%':'—';
+  var chgCol=chg===null?'#5a7a9a':chg>=0?'#1a7a52':'#b83025';
+  return '<div class="chart-tile">'
+    +'<div class="ctop"><div class="ctitle-nm">'+FLBLS[k]+'</div>'
+    +'<div style="font-size:13px;font-weight:800;color:'+chgCol+'">'+chgTxt+'</div></div>'
+    +'<div style="display:flex;align-items:flex-end;gap:32px;padding-top:36px;padding-bottom:28px;position:relative;height:160px">'
+    // 2025 bar
+    +'<div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative">'
+    +'<div style="position:absolute;top:-24px;font-size:11px;font-weight:800;color:#8aa8c4;white-space:nowrap">'+fmtV(v25,m)+'</div>'
+    +'<div style="width:80%;background:#132744;opacity:.45;border-radius:4px 4px 0 0;height:'+bh25+'px"></div>'
+    +'<div style="position:absolute;bottom:-22px;font-size:11px;font-weight:700;color:#8aa8c4">'+PREV_FY_LBL+' Total</div>'
+    +'</div>'
+    // Current FY bar
+    +'<div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative">'
+    +'<div style="position:absolute;top:-24px;font-size:11px;font-weight:800;color:#132744;white-space:nowrap">'+fmtV(v26,m)+'</div>'
+    +'<div style="width:80%;background:#132744;border-radius:4px 4px 0 0;height:'+bh26+'px"></div>'
+    +'<div style="position:absolute;bottom:-22px;font-size:11px;font-weight:700;color:#132744">'+FY_LBL+' YTD</div>'
+    +'</div>'
+    +'</div>'
+    +'</div>';
+}
+
+// ── LEAD SOURCE BREAKDOWN TABLE ───────────────────────────────────────────────
+function buildLeadSourceTable(sourceCounts, periodLbl){
+  var entries=Object.entries(sourceCounts||{}).sort(function(a,b){return b[1]-a[1];});
+  var total=entries.reduce(function(s,e){return s+e[1];},0);
+  if(total===0){
+    // Show placeholder rows for known sources when no live data
+    entries=[['Door Knock',0],['Open Home',0],['Database',0],['RiTa',0],['Referral',0],['k2x',0],['Expired Listing',0],['Nurture Call',0],['Call In',0],['Fresh Network',0]];
+  }
+  var COLORS={
+    'Door Knock':     '#1d6fd4',
+    'Open Home':      '#059669',
+    'Database':       '#dc2626',
+    'RiTa':           '#db2777',
+    'Referral':       '#d97706',
+    'k2x':            '#65a30d',
+    'Expired Listing':'#7c3aed',
+    'Nurture Call':   '#0891b2',
+    'Call In':        '#ea580c',
+    'Fresh Network':  '#132744',
+    'Other':          '#6b7280',
+    'Unknown':        '#94a3b8'
+  };
+  var rows=entries.map(function(e){
+    var src=e[0],cnt=e[1];
+    var pct=total>0?Math.round(cnt/total*100):0;
+    var col=COLORS[src]||'#6b7280';
+    return '<tr>'
+      +'<td style="padding:9px 14px;font-size:13px;font-weight:600;color:#132744;border-bottom:1px solid #f0f4f9;display:flex;align-items:center;gap:8px">'
+      +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+col+';flex-shrink:0"></span>'+src+'</td>'
+      +'<td style="padding:9px 14px;font-size:14px;font-weight:800;color:#132744;text-align:right;border-bottom:1px solid #f0f4f9">'+cnt+'</td>'
+      +'<td style="padding:9px 14px;border-bottom:1px solid #f0f4f9;min-width:140px">'
+        +'<div style="display:flex;align-items:center;gap:8px">'
+        +'<div style="flex:1;height:8px;background:#e8eef5;border-radius:4px;overflow:hidden">'
+        +'<div style="height:8px;border-radius:4px;background:'+col+';width:'+pct+'%"></div>'
+        +'</div>'
+        +'<span style="font-size:12px;font-weight:700;color:#5a7a9a;width:34px;text-align:right">'+pct+'%</span>'
+        +'</div>'
+      +'</td>'
+    +'</tr>';
+  }).join('');
+
+  return '<div class="chart-tile" style="margin-bottom:12px">'
+    +'<div class="ctop" style="margin-bottom:12px">'
+    +'<div><div class="ctitle-nm">Lead Source Breakdown</div><div class="ctitle-sub">'+periodLbl+' &nbsp;&middot;&nbsp; Source: Leads board</div></div>'
+    +'<div style="text-align:right"><div class="ctitle-tot">'+total+'</div><div class="ctitle-sub">Total Leads</div></div>'
+    +'</div>'
+    +'<table style="width:100%;border-collapse:collapse">'
+    +'<thead><tr>'
+    +'<th style="padding:8px 14px;font-size:11px;font-weight:700;color:#5a7a9a;text-transform:uppercase;letter-spacing:.5px;text-align:left;border-bottom:2px solid #e8eef5">Source</th>'
+    +'<th style="padding:8px 14px;font-size:11px;font-weight:700;color:#5a7a9a;text-transform:uppercase;letter-spacing:.5px;text-align:right;border-bottom:2px solid #e8eef5">Count</th>'
+    +'<th style="padding:8px 14px;font-size:11px;font-weight:700;color:#5a7a9a;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e8eef5">Share</th>'
+    +'</tr></thead>'
+    +'<tbody>'+rows+'</tbody>'
+    +'</table>'
+    +'</div>';
+}
+
+function render(){
+  var d=DATA,html='';
+  var now=_now;
+  var monLbl=new Date(CM>=7?FY_START_YEAR:FY_END_YEAR,CM-1,1).toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+  var qLbl=FY_LBL+' Q'+CQ;
+
+  if(tab==='monthly'){
+    html+=curStrip(d.monthly,monLbl,'m');
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">'+monLbl+' \u2014 KPIs vs Monthly Targets</div><div class="div-line"></div></div>';
+    html+='<div class="krow4">'; ['GCI','SOLD','LIST','APPR'].forEach(function(k){html+=kcard(k,d.monthly[k]||0,'m',monLbl);}); html+='</div>';
+    html+='<div class="krow2" style="margin-top:12px">'; ['DK','BOOKED'].forEach(function(k){html+=kcard(k,d.monthly[k]||0,'m',monLbl);}); html+='</div>';
+    // Weekly breakdown
+    var wks = getWeeks(CM>=7?FY_START_YEAR:FY_END_YEAR, CM);
+    html += '<div class="divider"><div class="div-line"></div><div class="div-lbl">Weekly Breakdown &mdash; '+monLbl+'</div><div class="div-line"></div></div>';
+    html += '<div class="weekly-section">'+buildWeeklyTable(wks, now, TARGETS, LIVE_ITEMS, 'm')+'</div>';
+
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">Conversion Rates</div><div class="div-line"></div></div>';
+    html+='<div class="krow2">'+rateCards(d.monthly.SOLD||0,d.monthly.LIST||0,d.monthly.APPR||0)+'</div>';
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">Monthly Breakdown &mdash; '+FY_LBL+' (Jul&ndash;Jun)</div><div class="div-line"></div></div>';
+    KEYS.forEach(function(k){html+=barTile(k,d.monthly_bars[k]||new Array(12).fill(0),MON_LBLS,FY_CM_IDX,60,6,FY_LBL+' Jul\u2013Jun Total');});
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">Lead Source Breakdown</div><div class="div-line"></div></div>';
+    html+=buildLeadSourceTable((d.lead_sources&&d.lead_sources.monthly)||{},monLbl);
+
+  } else if(tab==='quarterly'){
+    html+=curStrip(d.quarterly,qLbl,'q');
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">'+qLbl+' \u2014 KPIs vs Quarterly Targets</div><div class="div-line"></div></div>';
+    html+='<div class="krow4">'; ['GCI','SOLD','LIST','APPR'].forEach(function(k){html+=kcard(k,d.quarterly[k]||0,'q',qLbl);}); html+='</div>';
+    html+='<div class="krow2" style="margin-top:12px">'; ['DK','BOOKED'].forEach(function(k){html+=kcard(k,d.quarterly[k]||0,'q',qLbl);}); html+='</div>';
+    // Quarterly Targets table — Q1 to Q4 actual vs target with catch-up logic
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">Quarterly Targets \u2014 '+FY_LBL+' Q1 to Q4 Compensation View</div><div class="div-line"></div></div>';
+    html+='<div class="weekly-section">'+buildQTargetsTable(d)+'</div>';
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">'+FY_LBL+' All Quarters &mdash; Bar Chart Breakdown</div><div class="div-line"></div></div>';
+    KEYS.forEach(function(k){html+=qTile(k,d.q_bars[k]||[0,0]);});
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">Conversion Rates</div><div class="div-line"></div></div>';
+    html+='<div class="krow2">'+rateCards(d.quarterly.SOLD||0,d.quarterly.LIST||0,d.quarterly.APPR||0)+'</div>';
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">Lead Source Breakdown</div><div class="div-line"></div></div>';
+    html+=buildLeadSourceTable((d.lead_sources&&d.lead_sources.quarterly)||{},qLbl);
+
+  } else if(tab==='summary'){
+    html+=renderSummary();
+  } else {
+    html+=curStrip(d.annual,FY_LBL+' Year to Date','ytd');
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">'+FY_LBL+' YTD \u2014 KPIs vs Annual Targets</div><div class="div-line"></div></div>';
+    html+='<div class="krow4">'; ['GCI','SOLD','LIST','APPR'].forEach(function(k){html+=kcard(k,d.annual[k]||0,'ytd',FY_LBL+' YTD');}); html+='</div>';
+    html+='<div class="krow2" style="margin-top:12px">'; ['DK','BOOKED'].forEach(function(k){html+=kcard(k,d.annual[k]||0,'ytd',FY_LBL+' YTD');}); html+='</div>';
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">Conversion Rates</div><div class="div-line"></div></div>';
+    html+='<div class="krow2">'+rateCards(d.annual.SOLD||0,d.annual.LIST||0,d.annual.APPR||0)+'</div>';
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">'+PREV_FY_LBL+' vs '+FY_LBL+'</div><div class="div-line"></div></div>';
+    html+='<div class="krow4" style="margin-bottom:4px">'; KEYS.forEach(function(k){html+=yrCard(k,d.cal_prev,d.cal_cur);}); html+='</div>';
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">'+PREV_FY_LBL+' Total vs '+FY_LBL+' Year to Date</div><div class="div-line"></div></div>';
+    KEYS.forEach(function(k){html+=yrCompareTile(k,d.cal_prev,d.cal_cur);});
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">Lead Source Breakdown</div><div class="div-line"></div></div>';
+    html+=buildLeadSourceTable((d.lead_sources&&d.lead_sources.annual)||{},FY_LBL+' Year to Date');
+  }
+  gid('content').innerHTML=html;
+  gid('fd').textContent='Last synced: '+new Date().toLocaleString('en-AU');
+}
+
+function renderSummary(){
+  var d = DATA;
+  var now = new Date();
+  var monLbl = new Date(CM>=7?FY_START_YEAR:FY_END_YEAR, CM-1, 1)
+    .toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+  var dateStr = now.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  // Build report data for each period independently
+  function makeReportData(vals, tkey, periodKey, periodLabel, monthsElapsedOverride){
+    var soldRate = vals.LIST>0 ? Math.round(vals.SOLD/vals.LIST*100) : 0;
+    var apprToList = vals.APPR>0 ? (vals.APPR/Math.max(vals.LIST,1)).toFixed(1) : '\u2014';
+    var gciAnn = TARGETS.GCI.a[0]||360000;
+    var gciStr = TARGETS.GCI.a[1]||500000;
+    var gciPct = Math.round((vals.GCI||0)/gciAnn*100);
+    var monthsElapsed = (monthsElapsedOverride !== undefined) ? monthsElapsedOverride : FY_CM_IDX+1;
+    var gciPace = monthsElapsed>0 ? Math.round((vals.GCI||0)/monthsElapsed*12) : 0;
+    var onPaceStr = gciPace>=gciStr?'ahead of stretch goal':gciPace>=gciAnn?'on pace for annual target':'behind annual pace';
+    function statusIcon(k,v){var t=TARGETS[k][tkey],mn=t&&t[0];if(!mn)return '\u25cf';var pct=Math.round(v/mn*100);if(pct>=100)return '\u2705';if(pct>=60)return '\u26a0\ufe0f';return '\u274c';}
+    function pctStr(k,v){var t=TARGETS[k][tkey],mn=t&&t[0];if(!mn)return 'Tracking';return Math.round(v/mn*100)+'% of target ('+fmtV(mn,isMon(k))+')';}
+    return {dateStr:dateStr,periodKey:periodKey,periodLabel:periodLabel,tkey:tkey,vals:vals,
+      kpis:[{k:'GCI',label:'GCI (Commission)'},{k:'SOLD',label:'Sold'},{k:'LIST',label:'Listings'},
+            {k:'APPR',label:'Appraisals'},{k:'DK',label:'Door Knocking Count'},{k:'BOOKED',label:'Appointments Booked'}],
+      soldRate:soldRate,apprToList:apprToList,gciAnn:gciAnn,gciStr:gciStr,gciPct:gciPct,gciPace:gciPace,onPaceStr:onPaceStr,
+      statusIcon:statusIcon,pctStr:pctStr};
+  }
+
+  var qLbl2 = FY_LBL+' Q'+CQ;
+  var rMonth = makeReportData(d.quarterly, 'q', 'Monthly', qLbl2, 3);
+  var rFY    = makeReportData(d.annual,  'ytd', 'Annual YTD', FY_LBL+' Year to Date', FY_CM_IDX+1);
+  rMonth.gciQ  = d.quarterly.GCI||0;
+  rMonth.gciFY = d.annual.GCI||0;
+  rFY.gciQ     = d.quarterly.GCI||0;
+  rFY.gciFY    = d.annual.GCI||0;
+  rMonth.qLbl  = FY_LBL+' Q'+CQ;
+  rFY.qLbl     = FY_LBL+' Q'+CQ;
+
+  var html = '';
+  html += '<div style="margin-bottom:16px;background:#132744;border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between">';
+  html += '<div><div style="font-size:18px;font-weight:900;color:#fff">Performance Summary</div>';
+  html += '<div style="font-size:12px;color:#8eb8d8;margin-top:2px">'+dateStr+'</div></div>';
+  html += '<div style="font-size:12px;color:#8eb8d8">Current month vs '+FY_LBL+' year to date</div>';
+  html += '</div>';
+
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">';
+
+  // Month column
+  html += '<div>';
+  html += '<div style="font-size:13px;font-weight:800;color:#132744;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #c1dae5">&#128197; '+qLbl2+'</div>';
+  html += '<div style="border:1px solid #dde6f0;border-radius:10px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.06)">';
+  html += buildEmailHTML(rMonth);
+  html += '</div></div>';
+
+  // FY column
+  html += '<div>';
+  html += '<div style="font-size:13px;font-weight:800;color:#132744;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #c1dae5">&#128197; '+FY_LBL+' Year to Date</div>';
+  html += '<div style="border:1px solid #dde6f0;border-radius:10px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.06)">';
+  html += buildEmailHTML(rFY);
+  html += '</div></div>';
+
+  html += '</div>';
+
+  // Lead Source Breakdown — below the summary columns
+  var d2 = DATA;
+  html += '<div class="divider" style="margin-top:24px"><div class="div-line"></div><div class="div-lbl">Lead Source Breakdown &mdash; '+FY_LBL+' Year to Date</div><div class="div-line"></div></div>';
+  html += buildLeadSourceTable((d2.lead_sources&&d2.lead_sources.annual)||{},FY_LBL+' Year to Date');
+
+  // Responsive: stack on narrow screens
+  html += '<style>.summary-grid-2col{display:grid;grid-template-columns:1fr 1fr;gap:20px}@media(max-width:900px){.summary-grid-2col{grid-template-columns:1fr}}</style>';
+
+  return html;
+}
+
+function setTab(t,el){tab=t;document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});el.classList.add('on');render();}
+
+async function discoverColumns(){
+  // Query SOLD board schema to find all column IDs and types — helps debug GCI column
+  try{
+    var q='{ boards(ids:[1950001138]){ columns{ id title type } } }';
+    var d=await gql(q);
+    var cols=d.boards[0].columns;
+    console.log('[COLUMN DISCOVERY] SOLD board columns:');
+    cols.forEach(function(c){console.log(' id='+c.id+' type='+c.type+' title="'+c.title+'"');});
+    // Also fetch first item with ALL columns to see raw values
+    var q2='{ boards(ids:[1950001138]){ items_page(limit:1){ items{ column_values{ id text value type ... on FormulaValue { display_value } ... on NumbersValue { number } } } } } }';
+    var d2=await gql(q2);
+    var item=d2.boards[0].items_page.items[0];
+    if(item){
+      console.log('[COLUMN DISCOVERY] First item all column_values:');
+      item.column_values.forEach(function(c){
+        console.log(' id='+c.id+' type='+c.type+' text="'+c.text+'" value='+c.value+' display_value='+c.display_value+' number='+c.number);
+      });
+    }
+  }catch(e){console.error('[COLUMN DISCOVERY] Error:',e);}
+}
+
+async function runFetch(tokenOverride){
+  var useToken=tokenOverride!==undefined?tokenOverride:TOKEN;
+  if(!useToken) return false;
+  TOKEN=useToken;
+  localStorage.setItem('sre_monday_token',TOKEN);
+  var rb=gid('rb'),ov=gid('ov');
+  rb.classList.add('busy');
+  ov.classList.remove('h');
+  gid('ovt').textContent='Connecting to monday.com...';
+  var timeoutId;
+  var timeoutPromise=new Promise(function(_,reject){
+    timeoutId=setTimeout(function(){reject(new Error('Request timed out after 30 seconds. Check your token and network connection.'));},30000);
+  });
+  try{
+    // Run column discovery in parallel for debugging (console only)
+    discoverColumns();
+    DATA=await Promise.race([fetchLive(),timeoutPromise]);
+    clearTimeout(timeoutId);
+    render();
+    showStatus('Live data synced from monday.com \u2014 '+new Date().toLocaleString('en-AU'),'ok');
+    gid('st').textContent=new Date().toLocaleString('en-AU')+' (live)';
+    return true;
+  }catch(err){
+    clearTimeout(timeoutId);
+    DATA=JSON.parse(JSON.stringify(CACHED_DATA));
+    render();
+    var msg=err.message||'Unknown error';
+    if(msg.indexOf('401')>=0||msg.indexOf('403')>=0||msg.indexOf('Unauthorized')>=0){
+      TOKEN=''; localStorage.removeItem('sre_monday_token');
+      msg='Invalid token (401/403) \u2014 token cleared. '+msg;
+    }
+    showStatus('Error: '+msg+'. Showing cached data.','err');
+    return false;
+  }finally{
+    rb.classList.remove('busy');
+    ov.classList.add('h');
+  }
+}
+
+async function doRefresh(){
+  var t=prompt('Enter your monday.com API token (leave blank to clear saved token and use cached data).',TOKEN||'');
+  if(t===null) return;
+  t=t.trim();
+  if(!t){
+    TOKEN='';
+    localStorage.removeItem('sre_monday_token');
+    DATA=JSON.parse(JSON.stringify(CACHED_DATA));
+    render();
+    showStatus('Token cleared. Showing cached data.','info');
+    gid('st').textContent='26 Jun 2026 (cached)';
+    return;
+  }
+  await runFetch(t);
+}
+
+async function autoLoad(){
+  if(TOKEN){ await runFetch(TOKEN); }
+}
+
+
+// ── SEND REPORT ──────────────────────────────────────────────────────────────
+
+function buildReportData(){
+  var d = DATA;
+  var now = new Date();
+  var dateStr = now.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  // Determine active period
+  var periodKey, periodLabel, vals, tkey;
+  var activeTab = (tab === 'summary') ? 'monthly' : tab;
+  if(activeTab === 'monthly'){
+    vals = d.monthly;
+    tkey = 'm';
+    var monLbl = new Date(CM>=7?FY_START_YEAR:FY_END_YEAR, CM-1, 1)
+      .toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+    periodLabel = monLbl;
+    periodKey = 'Monthly';
+  } else if(activeTab === 'quarterly'){
+    vals = d.quarterly;
+    tkey = 'q';
+    periodLabel = FY_LBL + ' Q' + CQ + ' ('+(['Jul–Sep','Oct–Dec','Jan–Mar','Apr–Jun'][CQ-1])+')';
+    periodKey = 'Quarterly';
+  } else {
+    vals = d.annual;
+    tkey = 'ytd';
+    periodLabel = FY_LBL + ' Year to Date';
+    periodKey = 'Annual YTD';
+  }
+
+  // Build KPI rows
+  function statusIcon(k, v){
+    var t = TARGETS[k][tkey], mn = t&&t[0];
+    if(!mn) return '●'; // bullet
+    var pct = Math.round(v/mn*100);
+    if(pct>=100) return '✅'; // check
+    if(pct>=60)  return '⚠️'; // warning
+    return '❌'; // cross
+  }
+  function pctStr(k, v){
+    var t = TARGETS[k][tkey], mn = t&&t[0];
+    if(!mn) return 'Tracking';
+    return Math.round(v/mn*100)+'% of target ('+fmtV(mn,isMon(k))+')';
+  }
+
+  var kpis = [
+    {k:'GCI',    label:'GCI (Commission)'},
+    {k:'SOLD',   label:'Sold'},
+    {k:'LIST',   label:'Listings'},
+    {k:'APPR',   label:'Appraisals'},
+    {k:'DK',     label:'Door Knocking Count'},
+    {k:'BOOKED', label:'Appointments Booked'}
+  ];
+
+  // Conversion rates
+  var soldRate = vals.LIST>0 ? Math.round(vals.SOLD/vals.LIST*100) : 0;
+  var apprToList = vals.APPR>0 ? (vals.APPR/Math.max(vals.LIST,1)).toFixed(1) : '—';
+
+  // GCI pacing
+  var gciAnn = TARGETS.GCI.a[0]||360000;
+  var gciStr = TARGETS.GCI.a[1]||500000;
+  var gciPct = Math.round((vals.GCI||0)/gciAnn*100);
+  var monthsElapsed = FY_CM_IDX+1;
+  var gciPace = monthsElapsed>0 ? Math.round((vals.GCI||0)/monthsElapsed*12) : 0;
+  var onPaceStr = gciPace >= gciStr ? 'ahead of stretch goal' : gciPace >= gciAnn ? 'on pace for annual target' : 'behind annual pace';
+
+  return {
+    dateStr: dateStr,
+    periodKey: periodKey,
+    periodLabel: periodLabel,
+    tkey: tkey,
+    vals: vals,
+    kpis: kpis,
+    soldRate: soldRate,
+    apprToList: apprToList,
+    gciAnn: gciAnn,
+    gciStr: gciStr,
+    gciPct: gciPct,
+    gciPace: gciPace,
+    onPaceStr: onPaceStr,
+    statusIcon: statusIcon,
+    pctStr: pctStr
+  };
+}
+
+function buildEmailHTML(r){
+  var avgComm = r.vals.SOLD>0 ? fmtD(Math.round((r.vals.GCI||0)/r.vals.SOLD)) : '\u2014';
+  var gciPct  = r.gciPct;
+
+  // Helper: status text + colours (no emoji, Outlook-safe)
+  function statusInfo(k,v){
+    var t=TARGETS[k][r.tkey], mn=t&&t[0];
+    if(!mn) return {lbl:'Tracking', bg:'#e8eef5', cl:'#334155', dot:'#94a3b8'};
+    var pct=Math.round(v/mn*100);
+    if(pct>=100) return {lbl:'On Track',   bg:'#dcfce7', cl:'#14532d', dot:'#16a34a'};
+    if(pct>=60)  return {lbl:'Approaching',bg:'#fef9c3', cl:'#713f12', dot:'#ca8a04'};
+    return            {lbl:'Behind',      bg:'#fee2e2', cl:'#7f1d1d', dot:'#dc2626'};
+  }
+
+  function pctOfTgt(k,v){
+    var t=TARGETS[k][r.tkey], mn=t&&t[0];
+    if(!mn) return '';
+    return Math.round(v/mn*100)+'%';
+  }
+
+  function tgtStr(k){
+    var t=TARGETS[k][r.tkey], mn=t&&t[0], str=t&&t[1];
+    if(!mn) return '\u2014';
+    var s = isMon(k)?fmtD(mn):mn;
+    if(str) s += ' \u2013 '+(isMon(k)?fmtD(str):str);
+    return s;
+  }
+
+  var kpis = [
+    {k:'GCI',      lbl:'GCI (Commission)'},
+    {k:'SOLD',     lbl:'Properties Sold'},
+    {k:'LIST',     lbl:'New Listings'},
+    {k:'APPR',     lbl:'Appraisals Conducted'},
+    {k:'DK',       lbl:'Door Knocking Count'},
+    {k:'BOOKED',   lbl:'Appointments Booked'}
+  ];
+
+  // KPI rows — alternating rows, inline progress bar via table width trick
+  var kpiRows = kpis.map(function(item,i){
+    var v   = r.vals[item.k]||0;
+    var si  = statusInfo(item.k, v);
+    var pct = pctOfTgt(item.k, v);
+    var tgt = tgtStr(item.k);
+    var valStr = fmtV(v, isMon(item.k));
+    var rowBg  = i%2===0 ? '#ffffff' : '#f8fafc';
+    // Inline progress bar — Outlook-safe nested table, no dot-at-zero
+    var t = TARGETS[item.k][r.tkey], mn = t&&t[0];
+    var barPct = mn ? Math.min(Math.round(v/mn*100), 100) : 0;
+    var BAR_W = 120; // total bar width in px
+    var filledW = mn ? Math.max(Math.round(barPct/100*BAR_W), 0) : 0;
+    var emptyW  = BAR_W - filledW;
+    var barClr  = si.lbl==='On Track'?'#16a34a':si.lbl==='Approaching'?'#ca8a04':'#dc2626';
+    var bar = '';
+    if(mn){
+      bar = '<table width="'+BAR_W+'" cellpadding="0" cellspacing="0" border="0" style="margin-top:5px"><tr>';
+      if(filledW>0) bar += '<td width="'+filledW+'" height="6" bgcolor="'+barClr+'" style="background:'+barClr+';font-size:0;line-height:0;height:6px"></td>';
+      if(emptyW>0)  bar += '<td width="'+emptyW+'"  height="6" bgcolor="#e2e8f0" style="background:#e2e8f0;font-size:0;line-height:0;height:6px"></td>';
+      bar += '</tr></table>';
+    }
+    return '<tr style="background:'+rowBg+'">'
+      +'<td style="padding:11px 16px;font-size:13px;font-weight:600;color:#1e293b !important;border-right:1px solid #e2e8f0;white-space:nowrap"><span style="color:#1e293b;text-decoration:none;font-family:Arial,Helvetica,sans-serif">'+item.lbl+'</span></td>'
+      +'<td style="padding:11px 16px;font-size:15px;font-weight:900;color:#0f172a;text-align:right;white-space:nowrap;border-right:1px solid #e2e8f0">'+valStr+(pct?'<div style="font-size:10px;font-weight:600;color:#64748b;margin-top:1px">'+pct+' of target</div>':'')+'</td>'
+      +'<td style="padding:11px 16px;text-align:center;border-right:1px solid #e2e8f0;white-space:nowrap">'
+        +'<span style="display:inline-block;background:'+si.bg+';color:'+si.cl+';padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.3px">'+si.lbl+'</span>'
+      +'</td>'
+      +'<td style="padding:11px 16px;font-size:12px;color:#475569">'
+        +'<span style="font-weight:700;color:#1e293b">'+tgt+'</span>'
+        +bar
+      +'</td>'
+    +'</tr>';
+  }).join('');
+
+  // GCI badge colours
+  var gciBg  = gciPct>=100?'#dcfce7':gciPct>=60?'#fef9c3':'#fee2e2';
+  var gciCl  = gciPct>=100?'#14532d':gciPct>=60?'#713f12':'#7f1d1d';
+  var paceBg = r.gciPace>=r.gciStr?'#dcfce7':r.gciPace>=r.gciAnn?'#fef9c3':'#fee2e2';
+  var paceCl = r.gciPace>=r.gciStr?'#14532d':r.gciPace>=r.gciAnn?'#713f12':'#7f1d1d';
+
+  // Sold rate colour
+  var srBg = r.soldRate>=70?'#dcfce7':r.soldRate>=42?'#fef9c3':'#fee2e2';
+  var srCl = r.soldRate>=70?'#14532d':r.soldRate>=42?'#713f12':'#7f1d1d';
+  var alNum = r.vals.APPR>0&&r.vals.LIST>0 ? r.vals.APPR/r.vals.LIST : null;
+  var alBg  = alNum!==null&&alNum<=7?'#dcfce7':alNum!==null&&alNum<=10.5?'#fef9c3':'#fee2e2';
+  var alCl  = alNum!==null&&alNum<=7?'#14532d':alNum!==null&&alNum<=10.5?'#713f12':'#7f1d1d';
+  var acBg  = r.vals.SOLD>0?'#eff6ff':'#f8fafc';
+  var acCl  = r.vals.SOLD>0?'#1e40af':'#64748b';
+
+  var h = '';
+
+  // ── Outer wrapper
+  // Outlook hyperlink colour reset — injected into the HTML fragment itself
+  // so it also works when pasted directly into Outlook compose
+  h += '<style type="text/css">'
+    + 'a,a:link,a:visited,a:hover,a:active{color:inherit !important;text-decoration:none !important}'
+    + 'span.MsoHyperlink,span.MsoHyperlinkFollowed{color:inherit !important;mso-style-priority:99 !important}'
+    + '</style>';
+  h += '<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#eef2f7" style="background:#eef2f7">';
+  h += '<tr><td align="center" style="padding:24px 12px">';
+  h += '<table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;font-family:Arial,Helvetica,sans-serif">';
+
+  // ── HEADER
+  h += '<tr><td bgcolor="#0f172a" style="background:#0f172a;padding:28px 32px;border-radius:10px 10px 0 0">';
+  h += '<table width="100%" cellpadding="0" cellspacing="0" border="0"><tr valign="top">';
+  // Left: logo + title
+  h += '<td>';
+  h += '<table cellpadding="0" cellspacing="0" border="0"><tr valign="middle">';
+  h += '<td style="width:44px">';
+  h += '<table width="40" height="40" cellpadding="0" cellspacing="0" border="0"><tr>';
+  h += '<td bgcolor="#ffffff" style="background:#ffffff;border-radius:6px;text-align:center;vertical-align:middle;width:40px;height:40px">';
+  h += '<span style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:900;color:#0f172a;line-height:40px">S</span>';
+  h += '</td></tr></table></td>';
+  h += '<td style="padding-left:12px">';
+  h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#94a3b8;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase">SEALED REAL ESTATE</div>';
+  h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:20px;font-weight:900;margin-top:2px">Performance Report</div>';
+  h += '</td></tr></table>';
+  h += '</td>';
+  // Right: period box
+  h += '<td align="right">';
+  h += '<table cellpadding="0" cellspacing="0" border="0"><tr>';
+  h += '<td bgcolor="#1e3a5f" style="background:#1e3a5f;border-radius:6px;padding:10px 16px;text-align:right">';
+  h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#94a3b8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Period</div>';
+  h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:15px;font-weight:800;margin-top:3px">'+r.periodLabel+'</div>';
+  h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#64a0c8;font-size:11px;margin-top:3px">'+r.dateStr+'</div>';
+  h += '</td></tr></table>';
+  h += '</td>';
+  h += '</tr></table>';
+  h += '</td></tr>';
+
+  // ── DIVIDER LINE
+  h += '<tr><td bgcolor="#1e3a5f" style="background:#1e3a5f;height:3px;font-size:0;line-height:0">&nbsp;</td></tr>';
+
+  // ── GCI HERO
+  h += '<tr><td bgcolor="#1e3a5f" style="background:#1e3a5f;padding:0">';
+  h += '<table width="100%" cellpadding="0" cellspacing="0" border="0"><tr valign="top">';
+  if(r.periodKey === 'Monthly'){
+    // Monthly card: full-width running quarter GCI
+    var qGciPct = r.gciAnn>0 ? Math.round((r.gciQ||0)/r.gciAnn*100) : 0;
+    var qGciBg  = qGciPct>=100?'#dcfce7':qGciPct>=60?'#fef9c3':'#fee2e2';
+    var qGciCl  = qGciPct>=100?'#14532d':qGciPct>=60?'#713f12':'#7f1d1d';
+    h += '<td width="100%" style="padding:22px 32px">';
+    h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#94a3b8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">GCI &mdash; '+(r.qLbl||'Current Quarter')+'</div>';
+    h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:36px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">'+fmtD(r.gciQ||0)+'</div>';
+    h += '<table cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="'+qGciBg+'" style="background:'+qGciBg+';border-radius:4px;padding:3px 10px">';
+    h += '<span style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;color:'+qGciCl+'">'+qGciPct+'% of min target</span>';
+    h += '</td></tr></table>';
+    h += '</td>';
+  } else {
+    // FY card: full-width, single clean GCI figure
+    h += '<td width="100%" style="padding:22px 32px">';
+    h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#94a3b8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">GCI &mdash; '+FY_LBL+' Running Total</div>';
+    h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:36px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">'+fmtD(r.gciFY||r.vals.GCI||0)+'</div>';
+    h += '<table cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="'+gciBg+'" style="background:'+gciBg+';border-radius:4px;padding:3px 10px">';
+    h += '<span style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;color:'+gciCl+'">'+gciPct+'% of min target</span>';
+    h += '</td></tr></table>';
+    h += '</td>';
+  }
+  h += '</tr></table>';
+  h += '</td></tr>';
+
+  // ── QUICK STATS BAR
+  h += '<tr><td bgcolor="#ffffff" style="background:#ffffff;border-left:1px solid #e2e8f0;border-right:1px solid #e2e8f0">';
+  h += '<table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>';
+  var qs = [
+    {lbl:'Properties Sold', val:r.vals.SOLD||0, fmt:false},
+    {lbl:'New Listings',    val:r.vals.LIST||0, fmt:false},
+    {lbl:'Appraisals',      val:r.vals.APPR||0, fmt:false},
+    {lbl:'Avg Commission',  val:r.vals.SOLD>0?Math.round((r.vals.GCI||0)/r.vals.SOLD):null, fmt:true}
+  ];
+  qs.forEach(function(s,i){
+    var br = i<3 ? 'border-right:1px solid #f1f5f9;' : '';
+    var vStr = s.val===null ? '\u2014' : (s.fmt ? fmtD(s.val) : s.val);
+    h += '<td width="25%" style="padding:16px 12px;text-align:center;'+br+'">';
+    h += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;color:#0f172a">'+vStr+'</div>';
+    h += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:600;color:#64748b;margin-top:3px;text-transform:uppercase;letter-spacing:.5px">'+s.lbl+'</div>';
+    h += '</td>';
+  });
+  h += '</tr></table>';
+  h += '</td></tr>';
+
+  // ── KPI TABLE HEADER
+  h += '<tr><td bgcolor="#0f172a" style="background:#0f172a;padding:10px 20px;border-left:1px solid #0f172a;border-right:1px solid #0f172a">';
+  h += '<span style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:1.2px;text-transform:uppercase">Detailed KPI Breakdown &mdash; '+r.periodLabel+'</span>';
+  h += '</td></tr>';
+
+  // Column headers
+  h += '<tr><td style="padding:0;border-left:1px solid #e2e8f0;border-right:1px solid #e2e8f0">';
+  h += '<table width="100%" cellpadding="0" cellspacing="0" border="0">';
+  h += '<tr bgcolor="#f1f5f9">';
+  h += '<th style="padding:9px 16px;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:#64748b;text-align:left;text-transform:uppercase;letter-spacing:.8px;border-bottom:2px solid #e2e8f0;border-right:1px solid #e2e8f0">Metric</th>';
+  h += '<th style="padding:9px 16px;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:#64748b;text-align:right;text-transform:uppercase;letter-spacing:.8px;border-bottom:2px solid #e2e8f0;border-right:1px solid #e2e8f0">Actual</th>';
+  h += '<th style="padding:9px 16px;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:#64748b;text-align:center;text-transform:uppercase;letter-spacing:.8px;border-bottom:2px solid #e2e8f0;border-right:1px solid #e2e8f0">Status</th>';
+  h += '<th style="padding:9px 16px;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:#64748b;text-align:left;text-transform:uppercase;letter-spacing:.8px;border-bottom:2px solid #e2e8f0">Target</th>';
+  h += '</tr>';
+  h += kpiRows;
+  h += '</table>';
+  h += '</td></tr>';
+
+  // ── CONVERSION RATES HEADER
+  h += '<tr><td bgcolor="#0f172a" style="background:#0f172a;padding:10px 20px;border-left:1px solid #0f172a;border-right:1px solid #0f172a;margin-top:0">';
+  h += '<span style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:1.2px;text-transform:uppercase">Conversion Rates</span>';
+  h += '</td></tr>';
+
+  // Conversion tiles
+  h += '<tr><td bgcolor="#ffffff" style="background:#ffffff;border:1px solid #e2e8f0;border-top:none;padding:16px">';
+  h += '<table width="100%" cellpadding="0" cellspacing="0" border="0"><tr valign="top">';
+
+  var convs = [
+    {lbl:'Listing \u2192 Sold Rate', val:r.soldRate+'%',  sub:'Target: 70%',  bg:srBg,  cl:srCl},
+    {lbl:'Appraisal \u2192 Listing', val:'1 : '+r.apprToList, sub:'Target: 1 : 7', bg:alBg, cl:alCl},
+    {lbl:'Avg Commission',           val:avgComm,          sub:'Target: $16,000', bg:acBg, cl:acCl}
+  ];
+  convs.forEach(function(c,i){
+    var br = i<2 ? 'padding-right:8px;' : '';
+    h += '<td width="33%" style="'+br+'">';
+    h += '<table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>';
+    h += '<td bgcolor="'+c.bg+'" style="background:'+c.bg+';border-radius:6px;padding:14px;text-align:center">';
+    h += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;color:'+c.cl+'">'+c.val+'</div>';
+    h += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#1e293b !important;margin-top:5px"><span style="color:#1e293b;text-decoration:none">'+c.lbl+'</span></div>';
+    h += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;margin-top:3px">'+c.sub+'</div>';
+    h += '</td></tr></table>';
+    h += '</td>';
+  });
+  h += '</tr></table>';
+  h += '</td></tr>';
+
+  // ── FOOTER
+  h += '<tr><td bgcolor="#0f172a" style="background:#0f172a;padding:16px 28px;border-radius:0 0 10px 10px">';
+  h += '<table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>';
+  h += '<td><span style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#475569">Sealed Real Estate &nbsp;&middot;&nbsp; Performance Dashboard &nbsp;&middot;&nbsp; Data via monday.com</span></td>';
+  h += '<td align="right"><span style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#475569">'+r.dateStr+'</span></td>';
+  h += '</tr></table>';
+  h += '</td></tr>';
+
+  // Close wrapper
+  h += '</table>';
+  h += '</td></tr></table>';
+
+  return h;
+}
+
+
+function buildEmailPlainText(r){
+  var sep = '========================================';
+  var lines = [
+    'SEALED REAL ESTATE — PERFORMANCE REPORT',
+    sep,
+    'Period: ' + r.periodLabel,
+    'Generated: ' + r.dateStr,
+    '',
+    'GCI (' + r.periodKey + '): ' + fmtD(r.vals.GCI||0) + '  (' + r.gciPct + '% of min target)',
+    'Annual Run Rate: ' + fmtD(r.gciPace) + '/yr — ' + r.onPaceStr,
+    '',
+    'KPI BREAKDOWN',
+    sep
+  ];
+  r.kpis.forEach(function(item){
+    var v = r.vals[item.k]||0;
+    lines.push(item.label + ': ' + fmtV(v, isMon(item.k)) + '  — ' + r.pctStr(item.k, v));
+  });
+  lines.push('');
+  lines.push('CONVERSION RATES');
+  lines.push(sep);
+  lines.push('Listing to Sold Rate: ' + r.soldRate + '% (Target: 70%+)');
+  lines.push('Appraisal to Listing: 1 : ' + r.apprToList + ' (Target: 1 : 7)');
+  var avgComm = r.vals.SOLD>0 ? fmtD(Math.round((r.vals.GCI||0)/r.vals.SOLD)) : '—';
+  lines.push('Avg Commission: ' + avgComm + ' (Target: $16,000)');
+  lines.push('');
+  lines.push(sep);
+  lines.push('Sealed Real Estate · Performance Dashboard · Data from monday.com');
+  return lines.join('\n');
+}
+
+function openReportModal(){
+  var r = buildReportData();
+  var subj = 'Sealed RE — ' + r.periodKey + ' Performance Report · ' + r.periodLabel;
+  gid('rptSubject').textContent = subj;
+  gid('rptModalSub').textContent = r.periodKey + ' report · ' + r.periodLabel;
+  gid('rptEmailBody').innerHTML = buildEmailHTML(r);
+  gid('rptModalBg').classList.remove('h');
+  // Store for send
+  window._rptData = r;
+  window._rptSubj = subj;
+}
+
+function closeReportModal(){
+  gid('rptModalBg').classList.add('h');
+}
+
+function buildStandaloneHTML(r){
+  var head = '<!DOCTYPE html>'
+    + '<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">'
+    + '<head>'
+    + '<meta charset="UTF-8">'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+    + '<meta http-equiv="X-UA-Compatible" content="IE=edge">'
+    + '<title>'+window._rptSubj+'</title>'
+    + '<!--[if mso]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->'
+    + '<style type="text/css">'
+    + 'body,table,td,a,span,div{font-family:Arial,Helvetica,sans-serif !important}'
+    + 'a,a:link,a:visited,a:hover,a:active{'
+    + '  color:inherit !important;'
+    + '  text-decoration:none !important;'
+    + '  border:none !important;'
+    + '}'
+    + 'span.MsoHyperlink,span.MsoHyperlinkFollowed{'
+    + '  color:inherit !important;'
+    + '  mso-style-priority:99 !important;'
+    + '}'
+    + '</style>'
+    + '</head>'
+    + '<body style="margin:0;padding:0;background:#eef2f7">';
+  return head + buildEmailHTML(r) + '</body></html>';
+}
+
+function copyReportHTML(){
+  var r = window._rptData;
+  var html = buildEmailHTML(r);
+  var btn = gid('rptCopyHtmlBtn');
+  // Use ClipboardItem API for rich HTML copy
+  if(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write){
+    var blob = new Blob([html], {type:'text/html'});
+    var item = new ClipboardItem({'text/html': blob});
+    navigator.clipboard.write([item]).then(function(){
+      btn.innerHTML = '\u2713 Copied! Paste into Outlook';
+      btn.style.background = '#e8f5ef';
+      btn.style.color = '#1a6644';
+      setTimeout(function(){
+        btn.innerHTML = '&#128203; Copy HTML';
+        btn.style.background = '';
+        btn.style.color = '';
+      }, 3000);
+    }).catch(function(){
+      // Fallback: open tab
+      openReportTab();
+    });
+  } else {
+    // Fallback for browsers without ClipboardItem
+    openReportTab();
+  }
+}
+
+function openReportTab(){
+  var r = window._rptData;
+  var html = buildStandaloneHTML(r);
+  var filename = 'Sealed_RE_Report_' + r.periodLabel.replace(/[^a-zA-Z0-9]/g,'_') + '.html';
+  try {
+    var blob = new Blob([html], {type:'text/html;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+    var btn = gid('rptDownloadBtn');
+    if(btn){
+      var orig = btn.innerHTML;
+      btn.innerHTML = '\u2713 Downloaded!';
+      btn.style.background = '#e8f5ef';
+      btn.style.color = '#1a6644';
+      setTimeout(function(){ btn.innerHTML=orig; btn.style.background=''; btn.style.color=''; }, 2500);
+    }
+  } catch(e) {
+    var w = window.open('','_blank');
+    if(w){ w.document.open(); w.document.write(html); w.document.close(); }
+  }
+}
+
+function sendReportMailto(){
+  var r = window._rptData;
+  var subj = window._rptSubj;
+  var body = buildEmailPlainText(r);
+  var mailto = 'mailto:michael@sealedrealestate.com.au'
+    + '?subject=' + encodeURIComponent(subj)
+    + '&body=' + encodeURIComponent(body);
+  window.open(mailto);
+}
+
+// Close modal on background click
+document.getElementById('rptModalBg').addEventListener('click', function(e){
+  if(e.target === this) closeReportModal();
+});
+
+// Init
+DATA = JSON.parse(JSON.stringify(CACHED_DATA));
+render();
+var _annTab=gid('annualTab'); if(_annTab) _annTab.textContent='Annual ('+FY_LBL+')';
+var _fyH=gid('fyLblHdr'); if(_fyH) _fyH.textContent=FY_LBL;
+gid('st').textContent = '26 Jun 2026 (cached)';
+autoLoad();
+</script>
+</body>
+</html>
