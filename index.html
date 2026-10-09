@@ -122,6 +122,14 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,A
 @media(max-width:900px){.krow4,.krow3,.krow2,.split-grid{grid-template-columns:repeat(2,1fr);}.page,.hdr,.tab-bar{padding-left:14px;padding-right:14px;}}
 
 
+/* ANNUAL BASIS TOGGLE */
+.basis-row{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:14px;}
+.basis-lbl{font-size:11px;font-weight:700;color:#4a6a8a;letter-spacing:.6px;text-transform:uppercase;}
+.basis-seg{display:inline-flex;background:#fff;border:1px solid #c8d8e8;border-radius:8px;padding:3px;gap:2px;}
+.basis-btn{border:none;background:transparent;color:#4a6a8a;font-size:12px;font-weight:700;padding:7px 14px;border-radius:6px;cursor:pointer;font-family:inherit;}
+.basis-btn.on{background:#132744;color:#fff;}
+.basis-btn:hover:not(.on){background:#e8f0fb;}
+
 /* WEEKLY BREAKDOWN */
 .weekly-section{margin-bottom:4px;}
 .weekly-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(19,39,68,.07);border:1px solid #e8eef5;}
@@ -328,6 +336,15 @@ var PREV_FY_LBL='FY'+String(PREV_FY_START).slice(-2)+'/'+String(FY_START_YEAR).s
 // CACHED_DATA is FY25/26. If we are still in FY25/26 (i.e. before 1 Jul 2026),
 // the CACHED_DATA year labels match. If the calendar has rolled into FY26/27,
 // the CACHED_DATA will be shown under PREV_FY_LBL automatically.
+// Calendar Year (Jan 1 – Dec 31) — alternative basis for the Annual tab
+var CY_YEAR=_cy, PREV_CY_YEAR=_cy-1;
+var CY_LBL='CY'+CY_YEAR, PREV_CY_LBL='CY'+PREV_CY_YEAR;
+var CY_START_DATE=new Date(CY_YEAR,0,1), CY_END_DATE=new Date(CY_YEAR+1,0,1);
+var CY_TOTAL_DAYS=Math.round((CY_END_DATE-CY_START_DATE)/86400000);
+var CY_DAYS_ELAPSED=Math.min(Math.max(Math.round((_now-CY_START_DATE)/86400000)+1,1),CY_TOTAL_DAYS);
+var CY_DAY_FRAC=CY_DAYS_ELAPSED/CY_TOTAL_DAYS;
+var ANNUAL_MODE='fy';
+try{ if(localStorage.getItem('sre_annual_mode')==='cy') ANNUAL_MODE='cy'; }catch(e){}
 function fyQuarterOf(m){if(m>=7&&m<=9)return 1;if(m>=10&&m<=12)return 2;if(m>=1&&m<=3)return 3;return 4;}
 var CQ=fyQuarterOf(_cm);
 var CY=FY_START_YEAR;
@@ -367,8 +384,32 @@ function paceFracFor(tkey){return tkey==='q'?QTR_DAY_FRAC:1;}
     ];
   });
 })();
+// Derive calendar-year totals from the FY monthly bars (used for cached data,
+// where we only hold monthly buckets, not raw board items). Months outside the
+// current + previous FY have no cached data and count as 0.
+function barValFor(d,k,y,mo){
+  var fyStart=mo>=7?y:y-1, idx=mo>=7?mo-7:mo+5;
+  var src=fyStart===FY_START_YEAR?d.monthly_bars:fyStart===PREV_FY_START?d.prev_bars:null;
+  return (src&&src[k]&&src[k][idx])||0;
+}
+function cyTotalsFromBars(d,y){
+  var o={};
+  KEYS.forEach(function(k){
+    var s=0; for(var mo=1;mo<=12;mo++) s+=barValFor(d,k,y,mo);
+    o[k]=k==='GCI'?Math.round(s*100)/100:s;
+  });
+  o.CONDUCTED=0;
+  return o;
+}
+function ensureCY(d){
+  if(!d.cy)      d.cy=cyTotalsFromBars(d,CY_YEAR);
+  if(!d.cy_prev) d.cy_prev=cyTotalsFromBars(d,PREV_CY_YEAR);
+  if(!d.lead_sources) d.lead_sources={};
+  if(!d.lead_sources.cy) d.lead_sources.cy={};
+  return d;
+}
 var tab='monthly';
-var DATA=JSON.parse(JSON.stringify(CACHED_DATA));
+var DATA=ensureCY(JSON.parse(JSON.stringify(CACHED_DATA)));
 var TOKEN=localStorage.getItem('sre_monday_token')||'';
 
 function gid(id){return document.getElementById(id);}
@@ -620,7 +661,23 @@ async function fetchLive(){
     annual:   getLeadSources(function(i){return inR(cv(i,'date_mkwy7e2v'),YF,YT);})
   };
 
-  return {monthly:monthly,quarterly:quarterly,annual:annual,cal_prev:cal_prev,cal_cur:annual,monthly_bars:monthly_bars,q_bars:q_bars,prev_bars:prev_bars,lead_sources:lead_sources};
+  // Calendar-year totals (Jan 1 – Dec 31) for the Annual tab's "Calendar Year" basis
+  function rangeTotals(f,t){
+    return {
+      GCI:      Math.round(sold.filter(function(i){return inR(cv(i,'date4'),f,t);}).reduce(function(a,i){return a+commItem(i);},0)*100)/100,
+      SOLD:     sold.filter(function(i){return inR(cv(i,'date4'),f,t);}).length,
+      LIST:     list.filter(function(i){return isListing(i)&&inR(cv(i,'date4'),f,t);}).length,
+      APPR:     appr.filter(function(i){return inR(cv(i,'date4'),f,t);}).length,
+      DK:       leads.filter(function(i){return isDK(i)&&inR(cv(i,'date_mkwy7e2v'),f,t);}).length,
+      BOOKED:   leads.filter(function(i){return hasAppt(i)&&inR(cv(i,'datef6o1nn5f'),f,t);}).length,
+      CONDUCTED:cond.filter(function(i){return inR(cv(i,'dateoexhb6hn'),f,t);}).length
+    };
+  }
+  var cy=rangeTotals(CY_YEAR+'-01-01',CY_YEAR+'-12-31');
+  var cy_prev=rangeTotals(PREV_CY_YEAR+'-01-01',PREV_CY_YEAR+'-12-31');
+  lead_sources.cy=getLeadSources(function(i){return inR(cv(i,'date_mkwy7e2v'),CY_YEAR+'-01-01',CY_YEAR+'-12-31');});
+
+  return {cy:cy,cy_prev:cy_prev,monthly:monthly,quarterly:quarterly,annual:annual,cal_prev:cal_prev,cal_cur:annual,monthly_bars:monthly_bars,q_bars:q_bars,prev_bars:prev_bars,lead_sources:lead_sources};
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
@@ -962,7 +1019,8 @@ function splitTile(k,v25,v26){
     +'</div></div>';
 }
 
-function yrCard(k,p,c){
+function yrCard(k,p,c,pl,cl){
+  var PREV_FY_LBL=pl||window.PREV_FY_LBL, FY_LBL=cl||window.FY_LBL;
   var m=isMon(k),v25=p[k]||0,v26=c[k]||0,mx=Math.max(v25,v26,1);
   var chg=v25>0?Math.round((v26-v25)/v25*100):null,ct=chg!==null?(chg>=0?'+':'')+chg+'%':'\u2014',cc=chg===null?'#5a7a9a':chg>=0?'#1a6644':'#8b1a1a';
   return '<div class="yr-card"><div class="klbl">'+FLBLS[k]+'</div><div class="yr-row"><div class="yr-blk"><div class="yr-yr-lbl">'+PREV_FY_LBL+'</div><div class="yr-n-old">'+fmtV(v25,m)+'</div></div><div class="yr-arrow">&rarr;</div><div class="yr-blk"><div class="yr-yr-lbl">'+FY_LBL+'</div><div class="yr-n-new">'+fmtV(v26,m)+'</div></div><div class="yr-chg" style="color:'+cc+'">'+ct+'</div></div><div class="yr-bar-bg"><div class="yr-bar-fill" style="width:'+clamp(v26/mx*100)+'%"></div></div></div>';
@@ -1110,7 +1168,8 @@ function buildQTargetsTable(d){
 }
 
 
-function yrCompareTile(k,prev,cur){
+function yrCompareTile(k,prev,cur,pl,cl){
+  var PREV_FY_LBL=pl||window.PREV_FY_LBL, FY_LBL=cl||window.FY_LBL;
   var m=isMon(k);
   var v25=prev[k]||0, v26=cur[k]||0;
   var mx=Math.max(v25,v26,1);
@@ -1237,18 +1296,27 @@ function render(){
   } else if(tab==='summary'){
     html+=renderSummary();
   } else {
-    html+=curStrip(d.annual,FY_LBL+' Year to Date','a');
-    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">'+FY_LBL+' YTD \u2014 KPIs vs Annual Targets</div><div class="div-line"></div></div>';
-    html+='<div class="krow4">'; ['GCI','SOLD','LIST','APPR'].forEach(function(k){html+=kcard(k,d.annual[k]||0,'a',FY_LBL+' YTD');}); html+='</div>';
-    html+='<div class="krow2" style="margin-top:12px">'; ['DK','BOOKED'].forEach(function(k){html+=kcard(k,d.annual[k]||0,'a',FY_LBL+' YTD');}); html+='</div>';
+    var isCY=ANNUAL_MODE==='cy';
+    var aVals=isCY?d.cy:d.annual, aPrev=isCY?d.cy_prev:d.cal_prev;
+    var aLbl=isCY?CY_LBL:FY_LBL, aPrevLbl=isCY?PREV_CY_LBL:PREV_FY_LBL;
+    var aRange=isCY?'Jan\u2013Dec '+CY_YEAR:'Jul '+FY_START_YEAR+'\u2013Jun '+FY_END_YEAR;
+    var aLeads=(d.lead_sources&&(isCY?d.lead_sources.cy:d.lead_sources.annual))||{};
+    html+='<div class="basis-row"><span class="basis-lbl">Year basis</span><div class="basis-seg">'
+      +'<button class="basis-btn'+(isCY?'':' on')+'" onclick="setAnnualMode(\'fy\')">Financial Year ('+FY_LBL+')</button>'
+      +'<button class="basis-btn'+(isCY?' on':'')+'" onclick="setAnnualMode(\'cy\')">Calendar Year ('+CY_YEAR+')</button>'
+      +'</div></div>';
+    html+=curStrip(aVals,aLbl+' Year to Date <span style="font-size:11px;font-weight:600;color:#8eb8d8">('+aRange+')</span>','a');
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">'+aLbl+' YTD \u2014 KPIs vs Annual Targets</div><div class="div-line"></div></div>';
+    html+='<div class="krow4">'; ['GCI','SOLD','LIST','APPR'].forEach(function(k){html+=kcard(k,aVals[k]||0,'a',aLbl+' YTD');}); html+='</div>';
+    html+='<div class="krow2" style="margin-top:12px">'; ['DK','BOOKED'].forEach(function(k){html+=kcard(k,aVals[k]||0,'a',aLbl+' YTD');}); html+='</div>';
     html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">Conversion Rates</div><div class="div-line"></div></div>';
-    html+='<div class="krow2">'+rateCards(d.annual.SOLD||0,d.annual.LIST||0,d.annual.APPR||0)+'</div>';
-    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">'+PREV_FY_LBL+' vs '+FY_LBL+'</div><div class="div-line"></div></div>';
-    html+='<div class="krow4" style="margin-bottom:4px">'; KEYS.forEach(function(k){html+=yrCard(k,d.cal_prev,d.cal_cur);}); html+='</div>';
-    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">'+PREV_FY_LBL+' Total vs '+FY_LBL+' Year to Date</div><div class="div-line"></div></div>';
-    KEYS.forEach(function(k){html+=yrCompareTile(k,d.cal_prev,d.cal_cur);});
+    html+='<div class="krow2">'+rateCards(aVals.SOLD||0,aVals.LIST||0,aVals.APPR||0)+'</div>';
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">'+aPrevLbl+' vs '+aLbl+'</div><div class="div-line"></div></div>';
+    html+='<div class="krow4" style="margin-bottom:4px">'; KEYS.forEach(function(k){html+=yrCard(k,aPrev,aVals,aPrevLbl,aLbl);}); html+='</div>';
+    html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">'+aPrevLbl+' Total vs '+aLbl+' Year to Date</div><div class="div-line"></div></div>';
+    KEYS.forEach(function(k){html+=yrCompareTile(k,aPrev,aVals,aPrevLbl,aLbl);});
     html+='<div class="divider"><div class="div-line"></div><div class="div-lbl">Lead Source Breakdown</div><div class="div-line"></div></div>';
-    html+=buildLeadSourceTable((d.lead_sources&&d.lead_sources.annual)||{},FY_LBL+' Year to Date');
+    html+=buildLeadSourceTable(aLeads,aLbl+' Year to Date');
   }
   gid('content').innerHTML=html;
   gid('fd').textContent='Last synced: '+new Date().toLocaleString('en-AU');
@@ -1330,6 +1398,12 @@ function renderSummary(){
   return html;
 }
 
+function setAnnualMode(m){
+  ANNUAL_MODE=m==='cy'?'cy':'fy';
+  try{ localStorage.setItem('sre_annual_mode',ANNUAL_MODE); }catch(e){}
+  var at=gid('annualTab'); if(at) at.textContent='Annual ('+(ANNUAL_MODE==='cy'?CY_LBL:FY_LBL)+')';
+  render();
+}
 function setTab(t,el){tab=t;document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});el.classList.add('on');render();}
 
 async function discoverColumns(){
@@ -1377,7 +1451,7 @@ async function runFetch(tokenOverride){
     return true;
   }catch(err){
     clearTimeout(timeoutId);
-    DATA=JSON.parse(JSON.stringify(CACHED_DATA));
+    DATA=ensureCY(JSON.parse(JSON.stringify(CACHED_DATA)));
     render();
     var msg=err.message||'Unknown error';
     if(msg.indexOf('401')>=0||msg.indexOf('403')>=0||msg.indexOf('Unauthorized')>=0){
@@ -1399,7 +1473,7 @@ async function doRefresh(){
   if(!t){
     TOKEN='';
     localStorage.removeItem('sre_monday_token');
-    DATA=JSON.parse(JSON.stringify(CACHED_DATA));
+    DATA=ensureCY(JSON.parse(JSON.stringify(CACHED_DATA)));
     render();
     showStatus('Token cleared. Showing cached data.','info');
     gid('st').textContent='FY25/26 cache from 26 Jun 2026 — sync for live FY26/27 data';
@@ -1453,6 +1527,11 @@ function buildReportData(){
     tkey = 'q';
     periodLabel = FY_LBL + ' Q' + CQ + ' ('+(['Jul–Sep','Oct–Dec','Jan–Mar','Apr–Jun'][CQ-1])+')';
     periodKey = 'Quarterly';
+  } else if(ANNUAL_MODE==='cy'){
+    vals = d.cy;
+    tkey = 'a';
+    periodLabel = CY_LBL + ' Year to Date';
+    periodKey = 'Calendar YTD';
   } else {
     vals = d.annual;
     tkey = 'a';
@@ -1497,7 +1576,7 @@ function buildReportData(){
   // not always the full annual target.
   var gciPeriodTgt = (TARGETS.GCI[tkey] && TARGETS.GCI[tkey][0]) || gciAnn;
   var gciPct = Math.round((vals.GCI||0)/gciPeriodTgt*100);
-  var yearFraction = tkey==='a' ? FY_DAY_FRAC : tkey==='q' ? 0.25 : tkey==='m' ? (1/12) : FY_DAY_FRAC;
+  var yearFraction = tkey==='a' ? (ANNUAL_MODE==='cy'&&activeTab==='annual'?CY_DAY_FRAC:FY_DAY_FRAC) : tkey==='q' ? 0.25 : tkey==='m' ? (1/12) : FY_DAY_FRAC;
   var gciPace = yearFraction>0 ? Math.round((vals.GCI||0)/yearFraction) : 0;
   var onPaceStr = gciPace >= gciStr ? 'ahead of stretch goal' : gciPace >= gciAnn ? 'on pace for annual target' : 'behind annual pace';
 
@@ -1678,7 +1757,7 @@ function buildEmailHTML(r){
   } else {
     // FY card: full-width, single clean GCI figure
     h += '<td width="100%" style="padding:22px 32px">';
-    h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#94a3b8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">GCI &mdash; '+FY_LBL+' Running Total</div>';
+    h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#94a3b8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">GCI &mdash; '+(r.periodKey==='Calendar YTD'?CY_LBL:FY_LBL)+' Running Total</div>';
     h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:36px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">'+fmtD(r.gciFY||r.vals.GCI||0)+'</div>';
     h += '<table cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="'+gciBg+'" style="background:'+gciBg+';border-radius:4px;padding:3px 10px">';
     h += '<span style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;color:'+gciCl+'">'+gciPct+'% of annual min target</span>';
@@ -1914,9 +1993,9 @@ document.getElementById('rptModalBg').addEventListener('click', function(e){
 });
 
 // Init
-DATA = JSON.parse(JSON.stringify(CACHED_DATA));
+DATA = ensureCY(JSON.parse(JSON.stringify(CACHED_DATA)));
 render();
-var _annTab=gid('annualTab'); if(_annTab) _annTab.textContent='Annual ('+FY_LBL+')';
+var _annTab=gid('annualTab'); if(_annTab) _annTab.textContent='Annual ('+(ANNUAL_MODE==='cy'?CY_LBL:FY_LBL)+')';
 var _fyH=gid('fyLblHdr'); if(_fyH) _fyH.textContent=FY_LBL;
 gid('st').textContent = 'FY25/26 cache from 26 Jun 2026 — sync for live FY26/27 data';
 autoLoad();
