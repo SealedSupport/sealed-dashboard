@@ -290,22 +290,27 @@ var CACHED_DATA = {
 //   APPTS BOOKED→ same Leads board; items with datef6o1nn5f (Appointment Date & Time) not empty
 //   APPTS DONE  → monday.com board 5000848374; dateoexhb6hn = Date of Appraisal/visit
 //
-// GCI:        Monthly $30k–$42k  | Quarterly $90k–$126k | Annual min $360k / stretch $500k
-// Sales:      2–3/mo              | 22–32/year
-// Listings:   3–4/mo              | 32–46/year
-// Appraisals: 21–30/mo            | 260–368/year
-// Door Knock: tracking only, no target
-// Avg Commission: $16,000 (reference)
-// [min, stretch] format
+// Per Business Performance Goal FY2026/2027 (Daily Focus Page + FY26/27 Goal tiers):
+// GCI:        Monthly $14k / $25k / $33k  | Quarterly $42k / $75k / $99k | Annual $165k / $300k / $400k
+// Sales:      1–3/mo                      | 11 / 20 / 27 per year
+// Listings:   1–3/mo                      | 16 / 29 / 39 per year
+// Appraisals: 21–30/mo (5–7/wk, 1–2/day)  | 260–368/year  (no separate min tier)
+// Door Knock: 3 sessions/wk (Tue, Wed, Thu) — tracking only, no count target
+// Avg Commission: $15,000 (reference) · Listings→Sales 70% · Appraisal→Listing 1:10
+// Monthly/quarterly mid-points for Sales & Listings are derived from the annual tiers (÷12, ÷4).
+// FORMAT: [target, stretch, min] — index 0 is the TARGET tier (what "% of target" and
+// "On Track" measure against), 1 = stretch, 2 = minimum (below min = "Behind").
 var TARGETS = {
-  GCI:      {m:[30000,42000], q:[90000,126000], ytd:[null,null], a:[360000,500000]},
-  SOLD:     {m:[2,3],         q:[6,9],           ytd:[null,null], a:[22,32]},
-  LIST:     {m:[3,4],         q:[9,12],          ytd:[null,null], a:[32,46]},
-  APPR:     {m:[21,30],       q:[63,90],         ytd:[null,null], a:[260,368]},
-  DK:       {m:[null,null],   q:[null,null],     ytd:[null,null], a:[null,null]},
-  BOOKED:   {m:[null,null],   q:[null,null],     ytd:[null,null], a:[null,null]},
-  CONDUCTED:{m:[null,null],   q:[null,null],     ytd:[null,null], a:[null,null]}
+  GCI:      {m:[25000,33000,14000], q:[75000,99000,42000], ytd:[null,null,null], a:[300000,400000,165000]},
+  SOLD:     {m:[2,3,1],             q:[5,7,3],             ytd:[null,null,null], a:[20,27,11]},
+  LIST:     {m:[2,3,1],             q:[7,10,4],            ytd:[null,null,null], a:[29,39,16]},
+  APPR:     {m:[21,30,null],        q:[63,90,null],        ytd:[null,null,null], a:[260,368,null]},
+  DK:       {m:[null,null,null],    q:[null,null,null],    ytd:[null,null,null], a:[null,null,null]},
+  BOOKED:   {m:[null,null,null],    q:[null,null,null],    ytd:[null,null,null], a:[null,null,null]},
+  CONDUCTED:{m:[null,null,null],    q:[null,null,null],    ytd:[null,null,null], a:[null,null,null]}
 };
+var AVG_COMM_TGT=15000, SOLD_RATE_TGT=70, APPR_LIST_TGT=10;
+function minFor(k,tkey){var t=TARGETS[k]&&TARGETS[k][tkey];return t&&t[2]?t[2]:null;}
 var FLBLS={GCI:'GCI (Total Commission)',SOLD:'Count of Sold (by Sold Date)',LIST:'Listing Count (by Date Authority)',APPR:'Appraisal Count',DK:'Door Knocking Count',BOOKED:'Appointments Booked'};
 var SLBLS={GCI:'GCI',SOLD:'Sold',LIST:'Listings',APPR:'Appraisals',DK:'Door Knocking Count',BOOKED:'Appts Booked'};
 // Source notes shown in kcard subtitles
@@ -380,7 +385,8 @@ function paceFracFor(tkey){return tkey==='q'?QTR_DAY_FRAC:1;}
     var ann = TARGETS[k].a;
     TARGETS[k].ytd = [
       ann[0] ? Math.round(ann[0] * f) : null,
-      ann[1] ? Math.round(ann[1] * f) : null
+      ann[1] ? Math.round(ann[1] * f) : null,
+      ann[2] ? Math.round(ann[2] * f) : null
     ];
   });
 })();
@@ -417,7 +423,7 @@ function fmtD(v){return '$'+Math.round(v).toLocaleString('en-AU');}
 function fmtV(v,m){return m?fmtD(v):Number(Math.round(v)).toLocaleString('en-AU');}
 function clamp(v,mx){return Math.min(Math.max(v,0),mx||100);}
 function isMon(k){return k==='GCI';}
-function getSt(val,mn,paceFrac){if(!mn)return 'none';paceFrac=paceFrac||1;var eff=mn*paceFrac;return val>=eff?'ok':val>=eff*0.6?'warn':'bad';}
+function getSt(val,mn,paceFrac,floor){if(!mn)return 'none';paceFrac=paceFrac||1;var eff=mn*paceFrac;var fl=floor?floor*paceFrac:eff*0.6;return val>=eff?'ok':val>=fl?'warn':'bad';}
 var ST_LBL={ok:'On Track',warn:'Approaching Target',bad:'Behind Target',none:'Tracking'};
 var ST_CLS={ok:'sb-ok',warn:'sb-warn',bad:'sb-bad',none:'sb-none'};
 function sbadge(st){return '<span class="sbadge '+ST_CLS[st]+'"><span class="sb-dot"></span>'+ST_LBL[st]+'</span>';}
@@ -868,7 +874,7 @@ function curStrip(vals,label,tkey){
   var ks=['GCI','SOLD','LIST','APPR'];
   var items=ks.map(function(k){
     var val=vals[k]||0,t=TARGETS[k][tkey],mn=t&&t[0];
-    var pct=mn?Math.round(val/mn*100):null,st=getSt(val,mn,paceFracFor(tkey));
+    var pct=mn?Math.round(val/mn*100):null,st=getSt(val,mn,paceFracFor(tkey),minFor(k,tkey));
     var bc=st==='ok'?'cb-ok':st==='warn'?'cb-warn':st==='bad'?'cb-bad':'cb-none';
     var badge=mn?'<span class="cur-badge '+bc+'">'+pct+'% of target</span>':'<span class="cur-badge cb-none">Tracking</span>';
     return '<div class="cur-kpi"><div class="cur-kpi-lbl">'+SLBLS[k]+'</div><div class="cur-kpi-val">'+fmtV(val,isMon(k))+'</div>'+badge+'</div>';
@@ -877,7 +883,7 @@ function curStrip(vals,label,tkey){
 }
 
 function kcard(k,val,tkey,lbl){
-  var t=TARGETS[k][tkey],mn=t&&t[0],str=t&&t[1],m=isMon(k),st=getSt(val,mn,paceFracFor(tkey));
+  var t=TARGETS[k][tkey],mn=t&&t[0],str=t&&t[1],m=isMon(k),mnf=minFor(k,tkey),st=getSt(val,mn,paceFracFor(tkey),mnf);
   var pct=mn?'<div class="rate-pct">'+Math.round(val/mn*100)+'% of target</div>':'';
   var gap='';
   if(mn){var g=Math.max(mn-val,0);
@@ -886,8 +892,8 @@ function kcard(k,val,tkey,lbl){
       if(str&&val<str)gap+='<div class="reco-stretch">Stretch: '+(m?fmtD(str-val):(str-val))+UNITS[k]+' more</div>';}}
   var sp=(str||mn||1)*1.2,fp=clamp(val/sp*100),tp=clamp(mn?mn/sp*100:0),sp2=str?clamp(str/sp*100):0;
   var fc=st==='ok'?'pf-ok':st==='warn'?'pf-warn':'pf-bad';
-  var sm=str?'<div class="pbar-str" style="left:'+sp2+'%"></div>':'';
-  var pb=mn?'<div class="pbar-wrap"><div class="pbar-row"><span class="pbar-lbl">'+fmtV(val,m)+'</span><span class="pbar-lbl">Target '+fmtV(mn,m)+(str?' / Stretch '+fmtV(str,m):'')+'</span></div><div class="pbar-track"><div class="pbar-fill '+fc+'" style="width:'+fp+'%"></div><div class="pbar-tgt" style="left:'+tp+'%"></div>'+sm+'</div></div>':'';
+  var sm=(str?'<div class="pbar-str" style="left:'+sp2+'%"></div>':'')+(mnf?'<div class="pbar-str" style="left:'+clamp(mnf/sp*100)+'%;opacity:.25"></div>':'');
+  var pb=mn?'<div class="pbar-wrap"><div class="pbar-row"><span class="pbar-lbl">'+fmtV(val,m)+'</span><span class="pbar-lbl">'+(mnf?'Min '+fmtV(mnf,m)+' / ':'')+'Target '+fmtV(mn,m)+(str?' / Stretch '+fmtV(str,m):'')+'</span></div><div class="pbar-track"><div class="pbar-fill '+fc+'" style="width:'+fp+'%"></div><div class="pbar-tgt" style="left:'+tp+'%"></div>'+sm+'</div></div>':'';
   var src=SRCNOTE[k]?'<div style="font-size:10px;color:#8aa8c4;margin-top:6px;line-height:1.3">'+SRCNOTE[k]+'</div>':'';
   return '<div class="kcard"><div class="klbl">'+FLBLS[k]+'</div><div class="kval">'+fmtV(val,m)+'</div><div class="kperiod">'+lbl+'</div>'+sbadge(st)+pct+gap+pb+src+'</div>';
 }
@@ -895,10 +901,10 @@ function kcard(k,val,tkey,lbl){
 function rateCards(sv,lv,av){
   // Per Business Performance Goal 2026/2027:
   //   Listings -> Sales: 70%
-  //   Appraisal -> Listing: 1:7 (1 listing per 7 appraisals)
+  //   Appraisal -> Listing: 1:10 (1 listing per 10 appraisals)
 
   // ── Card 1: Listing → Sold rate (target 70%) ─────────────────────────────
-  var SR_TGT=70;
+  var SR_TGT=SOLD_RATE_TGT;
   var rate=lv>0?Math.round(sv/lv*100):0;
   var st1=rate>=SR_TGT?'ok':rate>=(SR_TGT*0.6)?'warn':'bad';
   var fc1=st1==='ok'?'pf-ok':st1==='warn'?'pf-warn':'pf-bad';
@@ -919,12 +925,12 @@ function rateCards(sv,lv,av){
     +'<div class="pbar-tgt" style="left:'+clamp(SR_TGT/scale1*100)+'%"></div></div></div>'
   +'</div>';
 
-  // ── Card 2: Appraisal → Listing rate (target 1:7) ────────────────────────
-  var AL_TGT=7; // appraisals per listing
+  // ── Card 2: Appraisal → Listing rate (target 1:10) ────────────────────────
+  var AL_TGT=APPR_LIST_TGT; // appraisals per listing
   var exp=av>0?Math.round(av/AL_TGT):0;
   var actualNum=lv>0&&av>0?av/lv:null;
   var actualStr=actualNum!==null?actualNum.toFixed(1):'\u2014';
-  // Lower ratio = better; on track if ratio ≤ 7
+  // Lower ratio = better; on track if ratio ≤ APPR_LIST_TGT
   var st2=actualNum===null?'none':actualNum<=AL_TGT?'ok':actualNum<=AL_TGT*1.5?'warn':'bad';
   var fc2=st2==='ok'?'pf-ok':st2==='warn'?'pf-warn':'pf-bad';
   var miss=Math.max(exp-lv,0);
@@ -1333,8 +1339,8 @@ function renderSummary(){
   function makeReportData(vals, tkey, periodKey, periodLabel, yearFractionOverride){
     var soldRate = vals.LIST>0 ? Math.round(vals.SOLD/vals.LIST*100) : 0;
     var apprToList = vals.APPR>0 ? (vals.APPR/Math.max(vals.LIST,1)).toFixed(1) : '\u2014';
-    var gciAnn = TARGETS.GCI.a[0]||360000;
-    var gciStr = TARGETS.GCI.a[1]||500000;
+    var gciAnn = TARGETS.GCI.a[0]||300000;
+    var gciStr = TARGETS.GCI.a[1]||400000;
     // % of target must reflect the period's OWN target (quarterly target for
     // the Quarterly column, YTD target for Annual YTD) — not always the full
     // annual target.
@@ -1569,8 +1575,8 @@ function buildReportData(){
   var apprToList = vals.APPR>0 ? (vals.APPR/Math.max(vals.LIST,1)).toFixed(1) : '—';
 
   // GCI pacing
-  var gciAnn = TARGETS.GCI.a[0]||360000;
-  var gciStr = TARGETS.GCI.a[1]||500000;
+  var gciAnn = TARGETS.GCI.a[0]||300000;
+  var gciStr = TARGETS.GCI.a[1]||400000;
   // % of target shown on the hero badge must reflect the period's OWN target
   // (quarterly target for the Quarterly tab, YTD target for Annual YTD) —
   // not always the full annual target.
@@ -1610,10 +1616,9 @@ function buildEmailHTML(r){
   function statusInfo(k,v){
     var t=TARGETS[k][r.tkey], mn=t&&t[0];
     if(!mn) return {lbl:'Tracking', bg:'#e8eef5', cl:'#334155', dot:'#94a3b8'};
-    var eff=mn*paceFracFor(r.tkey);
-    var pct=Math.round(v/eff*100);
-    if(pct>=100) return {lbl:'On Track',   bg:'#dcfce7', cl:'#14532d', dot:'#16a34a'};
-    if(pct>=60)  return {lbl:'Approaching',bg:'#fef9c3', cl:'#713f12', dot:'#ca8a04'};
+    var pf=paceFracFor(r.tkey), eff=mn*pf, fl=t[2]?t[2]*pf:eff*0.6;
+    if(v>=eff) return {lbl:'On Track',   bg:'#dcfce7', cl:'#14532d', dot:'#16a34a'};
+    if(v>=fl)    return {lbl:'Approaching',bg:'#fef9c3', cl:'#713f12', dot:'#ca8a04'};
     return            {lbl:'Behind',      bg:'#fee2e2', cl:'#7f1d1d', dot:'#dc2626'};
   }
 
@@ -1624,10 +1629,11 @@ function buildEmailHTML(r){
   }
 
   function tgtStr(k){
-    var t=TARGETS[k][r.tkey], mn=t&&t[0], str=t&&t[1];
+    var t=TARGETS[k][r.tkey], mn=t&&t[0], str=t&&t[1], lo=t&&t[2];
     if(!mn) return '\u2014';
-    var s = isMon(k)?fmtD(mn):mn;
-    if(str) s += ' \u2013 '+(isMon(k)?fmtD(str):str);
+    var f=function(x){return isMon(k)?fmtD(x):x;};
+    var s = (lo?'Min '+f(lo)+' / ':'')+f(mn);
+    if(str) s += ' / '+f(str);
     return s;
   }
 
@@ -1687,8 +1693,8 @@ function buildEmailHTML(r){
   var srBg = r.soldRate>=70?'#dcfce7':r.soldRate>=42?'#fef9c3':'#fee2e2';
   var srCl = r.soldRate>=70?'#14532d':r.soldRate>=42?'#713f12':'#7f1d1d';
   var alNum = r.vals.APPR>0&&r.vals.LIST>0 ? r.vals.APPR/r.vals.LIST : null;
-  var alBg  = alNum!==null&&alNum<=7?'#dcfce7':alNum!==null&&alNum<=10.5?'#fef9c3':'#fee2e2';
-  var alCl  = alNum!==null&&alNum<=7?'#14532d':alNum!==null&&alNum<=10.5?'#713f12':'#7f1d1d';
+  var alBg  = alNum!==null&&alNum<=APPR_LIST_TGT?'#dcfce7':alNum!==null&&alNum<=APPR_LIST_TGT*1.5?'#fef9c3':'#fee2e2';
+  var alCl  = alNum!==null&&alNum<=APPR_LIST_TGT?'#14532d':alNum!==null&&alNum<=APPR_LIST_TGT*1.5?'#713f12':'#7f1d1d';
   var acBg  = r.vals.SOLD>0?'#eff6ff':'#f8fafc';
   var acCl  = r.vals.SOLD>0?'#1e40af':'#64748b';
 
@@ -1751,7 +1757,7 @@ function buildEmailHTML(r){
     h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#94a3b8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">GCI &mdash; '+(r.qLbl||'Current Quarter')+'</div>';
     h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:36px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">'+fmtD(r.gciQ||0)+'</div>';
     h += '<table cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="'+qGciBg+'" style="background:'+qGciBg+';border-radius:4px;padding:3px 10px">';
-    h += '<span style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;color:'+qGciCl+'">'+qGciPct+'% of quarterly min target</span>';
+    h += '<span style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;color:'+qGciCl+'">'+qGciPct+'% of quarterly target</span>';
     h += '</td></tr></table>';
     h += '</td>';
   } else {
@@ -1760,7 +1766,7 @@ function buildEmailHTML(r){
     h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#94a3b8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">GCI &mdash; '+(r.periodKey==='Calendar YTD'?CY_LBL:FY_LBL)+' Running Total</div>';
     h += '<div style="font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:36px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">'+fmtD(r.gciFY||r.vals.GCI||0)+'</div>';
     h += '<table cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="'+gciBg+'" style="background:'+gciBg+';border-radius:4px;padding:3px 10px">';
-    h += '<span style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;color:'+gciCl+'">'+gciPct+'% of annual min target</span>';
+    h += '<span style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;color:'+gciCl+'">'+gciPct+'% of annual target</span>';
     h += '</td></tr></table>';
     h += '</td>';
   }
@@ -1816,8 +1822,8 @@ function buildEmailHTML(r){
 
   var convs = [
     {lbl:'Listing \u2192 Sold Rate', val:r.soldRate+'%',  sub:'Target: 70%',  bg:srBg,  cl:srCl},
-    {lbl:'Appraisal \u2192 Listing', val:'1 : '+r.apprToList, sub:'Target: 1 : 7', bg:alBg, cl:alCl},
-    {lbl:'Avg Commission',           val:avgComm,          sub:'Target: $16,000', bg:acBg, cl:acCl}
+    {lbl:'Appraisal \u2192 Listing', val:'1 : '+r.apprToList, sub:'Target: 1 : '+APPR_LIST_TGT, bg:alBg, cl:alCl},
+    {lbl:'Avg Commission',           val:avgComm,          sub:'Target: '+fmtD(AVG_COMM_TGT), bg:acBg, cl:acCl}
   ];
   convs.forEach(function(c,i){
     var br = i<2 ? 'padding-right:8px;' : '';
@@ -1857,7 +1863,7 @@ function buildEmailPlainText(r){
     'Period: ' + r.periodLabel,
     'Generated: ' + r.dateStr,
     '',
-    'GCI (' + r.periodKey + '): ' + fmtD(r.vals.GCI||0) + '  (' + r.gciPct + '% of min target)',
+    'GCI (' + r.periodKey + '): ' + fmtD(r.vals.GCI||0) + '  (' + r.gciPct + '% of target)',
     'Annual Run Rate: ' + fmtD(r.gciPace) + '/yr — ' + r.onPaceStr,
     '',
     'KPI BREAKDOWN',
@@ -1871,9 +1877,9 @@ function buildEmailPlainText(r){
   lines.push('CONVERSION RATES');
   lines.push(sep);
   lines.push('Listing to Sold Rate: ' + r.soldRate + '% (Target: 70%+)');
-  lines.push('Appraisal to Listing: 1 : ' + r.apprToList + ' (Target: 1 : 7)');
+  lines.push('Appraisal to Listing: 1 : ' + r.apprToList + ' (Target: 1 : '+APPR_LIST_TGT+')');
   var avgComm = r.vals.SOLD>0 ? fmtD(Math.round((r.vals.GCI||0)/r.vals.SOLD)) : '—';
-  lines.push('Avg Commission: ' + avgComm + ' (Target: $16,000)');
+  lines.push('Avg Commission: ' + avgComm + ' (Target: '+fmtD(AVG_COMM_TGT)+')');
   lines.push('');
   lines.push(sep);
   lines.push('Sealed Real Estate · Performance Dashboard · Data from monday.com');
